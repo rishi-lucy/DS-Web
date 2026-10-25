@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Student Digital Library
 
 A responsive MBU Data Science student-library portal built with Flask, Flask-Login, Flask-WTF and
@@ -111,3 +112,6 @@ message instead of pretending that a reset email was sent.
 Set `APP_ENV=production`, a long random `SECRET_KEY`, and a production
 `DATABASE_URL`. Production mode enables secure session and remember-me cookies;
 serve the application over HTTPS behind a production WSGI server.
+=======
+# DS-Web
+>>>>>>> origin/main
