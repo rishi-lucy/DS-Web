@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Review {{ draft.title }} | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% set section = "modules" %}
+{% include "_student_header.html" %}
+<main class="digital-library-main">
+  <div class="learning-page">
+    <a class="back-link" href="{{ url_for('library.faculty_modules') }}">← Back to Faculty Review</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Home</a><span>›</span><a href="{{ url_for('library.faculty_modules') }}">Faculty review</a><span>›</span><span>Review draft</span></nav>
+    <header class="profile-page-heading"><span class="eyebrow"><span class="eyebrow-line"></span> PENDING APPROVAL</span><h1>Review module draft<span class="title-period">.</span></h1><p>Students cannot see this draft unless an authorized faculty reviewer edits and publishes it.</p></header>
+    <form method="post" class="learning-card faculty-review-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="draft-title">Module title</label><input id="draft-title" name="title" value="{{ draft.title }}" maxlength="160" required>
+      <label for="draft-description">Description</label><textarea id="draft-description" name="description" maxlength="500" rows="3" required>{{ draft.description }}</textarea>
+      <label for="draft-content">Structured module content (JSON)</label><textarea id="draft-content" name="content_json" rows="28" required>{{ draft.content_json }}</textarea>
+      <p>Required sections: objectives, lessons, example, python, practice, mcqs, summary, and visual. Publishing sets faculty approval and makes this module available to students.</p>
+      <button class="button button-primary" type="submit">Approve and publish to students</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

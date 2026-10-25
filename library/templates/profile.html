@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_form_errors.html" import field_errors %}
+{% block title %}Your Profile | Student Digital Library{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+{% set section = "profile" %}
+{% include "_student_header.html" %}
+<main class="digital-library-main profile-page">
+  <div class="profile-page-heading"><span class="eyebrow"><span class="eyebrow-line"></span> YOUR ACCOUNT</span><h1>Student Profile<span class="title-period">.</span></h1><p>Your academic details are private to your signed-in account.</p></div>
+  <div class="profile-edit-layout">
+    <section class="profile-card profile-editor"><h2>Update your details</h2><p>Student identity and enrollment are linked to your account.</p>
+      <form method="post" class="auth-form profile-form" novalidate>{{ form.hidden_tag() }}
+        <div class="form-field">{{ form.full_name.label }}{{ form.full_name(class="form-control", autocomplete="name") }}{{ field_errors(form.full_name) }}</div>
+        <div class="profile-readonly"><span>College email</span><b>{{ current_user.email }}</b><small>Official MBU college email addresses cannot be changed.</small></div>
+        <div class="profile-readonly"><span>Roll Number</span><b>{{ current_user.student_id }}</b></div>
+        <div class="form-grid"><div class="form-field">{{ form.department.label }}{{ form.department(class="form-control form-select") }}{{ field_errors(form.department) }}</div><div class="form-field">{{ form.section.label }}{{ form.section(class="form-control form-select") }}{{ field_errors(form.section) }}</div></div>
+        <div class="form-field">{{ form.year.label }}{{ form.year(class="form-control form-select") }}{{ field_errors(form.year) }}</div>
+        <button class="button button-primary" type="submit" data-loading-label="Saving changes…">Save changes <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock %}

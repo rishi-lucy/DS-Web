@@ -1,0 +1,23 @@
+{% extends "auth_base.html" %}
+{% from "_form_errors.html" import field_errors %}
+{% block title %}Create Account | Student Digital Library{% endblock %}
+{% block auth_card_class %}auth-card-wide{% endblock %}
+{% block auth_title %}Create Student Account<span class="title-period">.</span>{% endblock %}
+{% block auth_subtitle %}Create your Student Digital Library account{% endblock %}
+{% block auth_content %}
+<form method="post" class="auth-form" novalidate>
+  {{ form.hidden_tag() }}
+  <div class="form-grid">
+    <div class="form-field form-field-full">{{ form.full_name.label }}{{ form.full_name(class="form-control", placeholder="Enter your full name", autocomplete="name") }}{{ field_errors(form.full_name) }}</div>
+    <div class="form-field form-field-full">{{ form.email.label }}{{ form.email(class="form-control", placeholder="name@mbu.asia", autocomplete="email", aria_describedby="email-errors") }}{{ field_errors(form.email) }}</div>
+    <div class="form-field form-field-full">{{ form.student_id.label }}{{ form.student_id(class="form-control", placeholder="Enter your student ID or roll number", autocomplete="off") }}{{ field_errors(form.student_id) }}</div>
+    <div class="form-field">{{ form.department.label }}{{ form.department(class="form-control form-select") }}{{ field_errors(form.department) }}</div>
+    <div class="form-field">{{ form.section.label }}{{ form.section(class="form-control form-select") }}{{ field_errors(form.section) }}</div>
+    <div class="form-field">{{ form.year.label }}{{ form.year(class="form-control form-select") }}{{ field_errors(form.year) }}</div>
+    <div class="form-field">{{ form.password.label }}<div class="password-wrap">{{ form.password(class="form-control", placeholder="At least 8 characters", autocomplete="new-password", id="register-password", data_password_strength="true") }}<button class="password-toggle" type="button" data-password-toggle="register-password" aria-label="Show password">Show</button></div><div class="strength-meter" aria-live="polite"><span class="strength-track"><span class="strength-fill"></span></span><span class="strength-label">Password strength</span></div>{{ field_errors(form.password) }}</div>
+    <div class="form-field">{{ form.confirm_password.label }}<div class="password-wrap">{{ form.confirm_password(class="form-control", placeholder="Re-enter your password", autocomplete="new-password", id="confirm-password") }}<button class="password-toggle" type="button" data-password-toggle="confirm-password" aria-label="Show password">Show</button></div>{{ field_errors(form.confirm_password) }}</div>
+  </div>
+  <button class="button button-primary button-full" type="submit" data-loading-label="Creating account…">Create student account <span aria-hidden="true">→</span></button>
+</form>
+<p class="auth-switch">Already have an account? <a class="text-link text-link-strong" href="{{ url_for('auth.login') }}">Sign in <span aria-hidden="true">↗</span></a></p>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Welcome | Student Digital Library{% endblock %}
+{% block body_class %}landing-body{% endblock %}
+{% block content %}
+<main class="landing-page">
+  <header class="landing-header">
+    <a class="brand brand-light landing-brand" href="{{ url_for('auth.landing') }}" aria-label="Student Digital Library home">
+      <img src="{{ url_for('static', filename='images/mbu-logo.png') }}" alt="Mohan Babu University logo">
+      <span class="brand-copy"><strong>Student</strong><span>DIGITAL LIBRARY</span></span>
+    </a>
+    <span class="campus-label"><span class="status-dot"></span> STUDENT PORTAL <span class="campus-divider">/</span> TIRUPATI</span>
+  </header>
+  <section class="landing-hero">
+    <div class="hero-copy">
+      <span class="eyebrow eyebrow-light"><span class="eyebrow-line"></span> YOUR CAMPUS, CONNECTED</span>
+      <h1>STUDENT<br><span>DIGITAL LIBRARY</span></h1>
+      <p class="hero-subtitle">Learn. Explore. Analyze. Achieve.</p>
+      <p class="hero-description">Your university learning space for Data Science — discover course modules, practical experiments, study materials and research resources in one place.</p>
+      <a class="button button-gold button-large" href="{{ url_for('library.dashboard') }}">
+        Explore Library <span class="button-arrow" aria-hidden="true">↗</span>
+      </a>
+      <div class="hero-footnote"><span aria-hidden="true">✳</span> DREAM. BELIEVE. ACHIEVE.</div>
+    </div>
+    <aside class="quote-card">
+      <span class="quote-kicker">A THOUGHT FOR THE CURIOUS</span>
+      <div class="quote-mark" aria-hidden="true">“</div>
+      <blockquote><span>Data</span> is the new language of the world.<br><span>Learn</span> it. <span>Analyze</span> it.<br>Change the <span>future.</span></blockquote>
+      <div class="quote-rule"></div>
+      <p>THE FUTURE BELONGS TO THOSE WHO UNDERSTAND THE DATA</p>
+    </aside>
+  </section>
+  <footer class="landing-footer">
+    <span>© 2026 STUDENT DIGITAL LIBRARY</span>
+    <span>DEPARTMENT OF DATA SCIENCE <i>·</i> TIRUPATI</span>
+  </footer>
+</main>
+{% endblock %}

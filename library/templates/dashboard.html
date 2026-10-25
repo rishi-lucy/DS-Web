@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Digital Library | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% include "_student_header.html" %}
+<main class="digital-library-main" id="dashboard-content">
+  <div class="dashboard-layout{% if section == 'home' and not query %} dashboard-layout-home{% endif %}">
+    <section class="dashboard-primary">
+      <div class="portal-welcome">
+        <div><span class="eyebrow"><span class="eyebrow-line"></span> YOUR LEARNING SPACE</span>
+          <h1>{% if current_user.is_authenticated %}Welcome, {{ current_user.full_name.split()[-1] }}!{% else %}Explore Data Science{% endif %} <span class="wave" aria-hidden="true">👋</span></h1>
+          <p class="welcome-subline">Welcome to the Student Digital Library.</p>
+          <p class="welcome-motivation">Learn. Practice. Explore. Build your future with Data Science.</p>
+        </div>
+        <span class="welcome-seal" aria-hidden="true">STUDENT<br><b>LIBRARY</b></span>
+      </div>
+
+      <form class="global-library-search" method="get" action="{{ url_for('library.dashboard') }}" role="search">
+        <input type="hidden" name="section" value="{{ section }}">
+        <span aria-hidden="true">⌕</span>
+        <input name="q" type="search" value="{{ query }}" placeholder="Search modules, experiments, tools and resources..." aria-label="Search the digital library">
+        <button type="submit">Search <span aria-hidden="true">→</span></button>
+      </form>
+
+      <section class="glass-design-showcase" aria-label="Futuristic UI component gallery">
+        <div class="showcase-header">
+          <div>
+            <span class="eyebrow"><span class="eyebrow-line"></span> FUTURISTIC INTERFACE</span>
+            <h2>Glassmorphism component set</h2>
+          </div>
+          <button class="neo-button primary" type="button" data-demo-action="Workspace created successfully">Create workspace</button>
+        </div>
+
+        <div class="showcase-grid">
+          <article class="glass-demo-card button-demo">
+            <div class="demo-button-row">
+              <button class="neo-button primary" type="button" data-demo-action="Workspace created successfully">Create workspace</button>
+              <button class="neo-button secondary" type="button" data-demo-action="Invite sent">Invite member</button>
+              <button class="neo-button icon" type="button" aria-label="Add action" data-demo-action="New item added">+</button>
+            </div>
+          </article>
+
+          <article class="glass-demo-card field-demo">
+            <label class="glass-field-label" for="showcase-search">Text Field</label>
+            <div class="glass-input-shell">
+              <span aria-hidden="true">⌕</span>
+              <input id="showcase-search" type="text" value="Search projects..." aria-label="Search projects" />
+            </div>
+          </article>
+
+          <article class="glass-demo-card field-demo">
+            <label class="glass-field-label" for="showcase-select">Search Field</label>
+            <div class="glass-select-shell">
+              <span aria-hidden="true">⌕</span>
+              <input id="showcase-select" type="text" value="Search projects..." aria-label="Search field" />
+              <span class="field-caret" aria-hidden="true">⌄</span>
+            </div>
+          </article>
+
+          <article class="glass-demo-card control-demo">
+            <div class="demo-control-row">
+              <label class="glass-check-wrap">
+                <input type="checkbox" checked>
+                <span class="glass-checkmark"></span>
+              </label>
+              <button type="button" class="neo-toggle is-on" aria-label="Toggle setting">
+                <span class="toggle-thumb"></span>
+              </button>
+            </div>
+            <div class="tab-strip" aria-label="Tabs example">
+              <button class="glass-tab is-active" type="button">Overview</button>
+              <button class="glass-tab" type="button">Insights</button>
+            </div>
+          </article>
+
+          <article class="glass-demo-card modal-demo">
+            <div class="mini-toast-card">
+              <span class="toast-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Profile updated</strong>
+                <small>Successfully</small>
+              </div>
+              <button type="button" class="close-chip" aria-label="Dismiss toast">×</button>
+            </div>
+            <button type="button" class="mini-modal-trigger" data-demo-action="Preview opened">Open preview</button>
+          </article>
+
+          <article class="glass-demo-card profile-demo">
+            <div class="profile-surface">
+              <div class="profile-avatar" aria-hidden="true">JD</div>
+              <div>
+                <strong>Jane Doe</strong>
+                <small>Lead Data Scientist</small>
+              </div>
+            </div>
+            <button class="neo-button secondary compact" type="button" data-demo-action="Profile preview opened">View profile</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="library-statistics" aria-label="Library at a glance">
+        <div class="library-stat"><span class="stat-icon">▤</span><span class="stat-value">{{ module_count }}</span><span class="stat-label">Modules</span></div>
+        <div class="library-stat"><span class="stat-icon">⚗</span><span class="stat-value">{{ lab_count }}</span><span class="stat-label">Lab Experiments</span></div>
+        <div class="library-stat"><span class="stat-icon">⌘</span><span class="stat-value">{{ tools|length }}</span><span class="stat-label">Tools</span></div>
+        <div class="library-stat"><span class="stat-icon">▧</span><span class="stat-value">{{ resource_count }}</span><span class="stat-label">Resources</span></div>
+      </section>
+
+      {% if current_user.is_authenticated and section == "home" and not query %}
+      <section class="registered-course-section catalog-section" aria-labelledby="registered-courses-title">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> YOUR ENROLLMENT</span><h2 id="registered-courses-title">My Registered Courses</h2><p>Courses listed in your student profile.</p></div><span class="catalog-total">{{ registered_courses|length }} COURSE{{ "" if registered_courses|length == 1 else "S" }}</span></div>
+        <div class="registered-course-grid">
+          {% for course in registered_courses %}
+          <article class="registered-course-card">
+            <span class="registered-course-icon" aria-hidden="true">▤</span>
+            <div><span class="registered-course-label">REGISTERED COURSE</span><h3>{{ course }}</h3><p>{{ current_user.department }} · Section {{ current_user.section }} · {{ current_user.year }}</p></div>
+            <a class="registered-course-action" href="{{ url_for('library.dashboard', section='modules') }}">View course modules <span aria-hidden="true">→</span></a>
+          </article>
+          {% else %}
+          <div class="empty-material-note">No course is listed in your student profile yet. Update your academic details in your profile.</div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if query %}
+      <section class="catalog-section search-results-section">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> LIBRARY SEARCH</span><h2>Results for “{{ query }}”</h2><p>Matching content across modules, labs, tools and resources.</p></div></div>
+        {% if search_results %}
+          {% for result_section, entries in search_results.items() %}
+          <div class="search-result-group">
+            <h3>{{ {"modules": "Modules", "labs": "Lab Experiments", "tools": "Tools", "resources": "Resources"}[result_section] }}</h3>
+            <div class="search-result-list">
+              {% for result in entries %}
+                {% if result_section == "modules" %}<a href="{{ url_for('library.dashboard', section='modules') }}" class="search-result"><span>Module {{ "%02d"|format(result.index) }}</span><b>{{ result.entry[0] }}</b><i>↗</i></a>
+                {% elif result_section == "labs" %}<a href="{{ url_for('library.dashboard', section='labs') }}" class="search-result"><span>Experiment {{ "%02d"|format(result.index) }}</span><b>{{ result.entry[0] }}</b><i>↗</i></a>
+                {% elif result_section == "tools" %}<a href="{{ result.entry[3] }}" target="_blank" rel="noopener noreferrer" class="search-result"><span>Tool</span><b>{{ result.entry[0] }}</b><i>↗</i></a>
+                {% else %}<a href="{{ url_for('library.dashboard', section='resources', q=result.entry[0]) }}" class="search-result"><span>Resource</span><b>{{ result.entry[0] }}</b><i>↗</i></a>{% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}<div class="empty-state"><span>⌕</span><h3>No matching learning content</h3><p>Try Python, Machine Learning, research papers, or another topic.</p><a class="text-link text-link-strong" href="{{ url_for('library.dashboard') }}">Clear search →</a></div>{% endif %}
+      </section>
+      {% elif section in ["home", "modules"] %}
+      <section class="catalog-section">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> YOUR LEARNING PATH</span><h2>Data Science Modules</h2><p>Build your knowledge one concept at a time.</p></div><span class="catalog-total">{{ modules|length }} MODULES</span></div>
+        <div class="module-grid">
+          {% for module in modules %}
+          <article class="module-card">
+            <div class="module-card-top"><span class="module-number">MODULE {{ "%02d"|format(loop.index) }}</span><span class="module-bookmark" aria-hidden="true">✳</span></div>
+            <h3>{{ module[0] }}</h3><p>{{ module[1] }}</p>
+            {% if current_user.is_authenticated %}<div class="module-progress-heading"><span>Progress</span><b>{{ module[2] }}%</b></div>
+            <div class="module-progress" role="progressbar" aria-label="{{ module[0] }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ module[2] }}"><span style="width: {{ module[2] }}%"></span></div>{% endif %}
+            <div class="concept-card-actions"><a class="catalog-card-action" href="{{ url_for('library.module_detail', slug=module[3]) }}">Open Module <span aria-hidden="true">→</span></a>{% if current_user.is_authenticated %}<a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='module', parent_id=module[3], concept=module[0]) }}">+ Add</a><a class="concept-view-button" href="{{ url_for('library.module_detail', slug=module[3]) }}#added-learning-content">View Content</a>{% endif %}</div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% elif section == "labs" %}
+      <section class="catalog-section">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> LEARN BY DOING</span><h2>Lab Experiments</h2><p>Practice data science concepts with hands-on experiments.</p></div><span class="catalog-total">12 EXPERIMENTS</span></div>
+        <div class="lab-grid">
+          {% for lab in labs %}
+          <article class="lab-card">
+            <div class="lab-card-top"><span class="module-number">EXPERIMENT {{ "%02d"|format(loop.index) }}</span><span class="lab-icon">⚗</span></div>
+            <h3>{{ lab[0] }}</h3><p><b>Aim</b>{{ lab[1] }}</p>
+            <div class="lab-tools"><span>REQUIRED TOOLS</span>{% for tool in lab[2] %}<i>{{ tool }}</i>{% endfor %}</div>
+            <div class="lab-actions"><a href="{{ url_for('library.lab_detail', slug=lab[3]) }}">View Experiment</a><a href="https://colab.research.google.com/" target="_blank" rel="noopener noreferrer">Open Code ↗</a>{% if current_user.is_authenticated %}<a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='lab', parent_id=lab[3], concept=lab[0]) }}">+ Add</a><a class="concept-view-button" href="{{ url_for('library.lab_detail', slug=lab[3]) }}#added-learning-content">View Added Content</a>{% endif %}</div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% elif section == "tools" %}
+      <section class="catalog-section">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> THE DATA SCIENCE TOOLKIT</span><h2>Tools for your ideas</h2><p>Explore trusted tools used throughout the data science workflow.</p></div><span class="catalog-total">12 TOOLS</span></div>
+        <div class="tool-grid">
+          {% for tool in tools %}
+          <article class="tool-card"><span class="tool-icon">{{ tool[2] }}</span><h3>{{ tool[0] }}</h3><p>{{ tool[1] }}</p><a href="{{ tool[3] }}" target="_blank" rel="noopener noreferrer">Open Tool <span aria-hidden="true">↗</span></a></article>
+          {% endfor %}
+        </div>
+      </section>
+      {% else %}
+      <section class="catalog-section">
+        <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> KEEP EXPLORING</span><h2>Learning Resources</h2><p>Find helpful material for every step of your learning journey.</p></div><span class="catalog-total">08 COLLECTIONS</span></div>
+        <div class="resource-collection-grid">
+          {% for item in library_resources %}
+          <article class="resource-collection-card"><span class="resource-collection-icon">{{ item[2] }}</span><h3>{{ item[0] }}</h3><p>{{ item[1] }}</p><a href="{{ url_for('library.resource_detail', slug=item[3]) }}">Explore Resources <span aria-hidden="true">→</span></a></article>
+          {% endfor %}
+        </div>
+        <div class="catalog-heading resource-topic-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> TOPIC COLLECTIONS</span><h2>Explore focused study notes</h2><p>Open a collection to find topic notes and links to the published course modules.</p></div></div>
+        <div class="resource-collection-grid">
+          {% for category in categories %}
+          <article class="resource-collection-card"><span class="resource-collection-icon">{{ category.icon }}</span><h3>{{ category.name }}</h3><p>{{ category.description }}</p><a href="{{ url_for('library.resource_detail', slug=category.slug) }}">Browse topics <span aria-hidden="true">→</span></a></article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+      {% if current_user.is_authenticated and section in ["home", "modules"] and not query %}
+      <section class="dashboard-learning-tools">
+        <div class="learning-widget">
+          <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> PERSONALIZED NEXT STEP</span><h2>AI recommended for you</h2></div></div>
+          {% if next_module %}
+          <h3>{{ next_module.title }}</h3><p>It is the next incomplete topic in your published Data Science curriculum.</p>
+          <a class="button button-primary" href="{{ url_for('library.module_detail', slug=next_module.slug) }}">Start learning <span aria-hidden="true">→</span></a>
+          {% else %}<p>All published modules are complete. Revisit a topic or explore the resource collections.</p>{% endif %}
+        </div>
+        <div class="learning-widget">
+          <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> TODAY'S STUDY PLAN</span><h2>Keep moving forward</h2></div><a href="{{ url_for('library.learning_analytics') }}">Performance →</a></div>
+          {% for item in daily_plan %}
+          <div class="plan-row"><span>{{ "✓" if item.completed else "○" }}</span><div><b>{{ item.title }}</b><small>{{ item.estimated_minutes }} min · {{ item.reason }}</small></div>
+            {% if not item.completed %}<form method="post" action="{{ url_for('library.complete_plan_item', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Complete</button></form>{% endif %}
+          </div>
+          {% else %}<p>Your published curriculum is complete for today.</p>{% endfor %}
+          <p class="streak-summary">🔥 Current learning streak: <b>{{ streak }} day{{ "" if streak == 1 else "s" }}</b> (counts completed learning, not page visits).</p>
+        </div>
+      </section>
+      {% endif %}
+      <footer class="dashboard-footer"><span>© 2026 STUDENT DIGITAL LIBRARY · DATA SCIENCE</span><span>LEARN. PRACTICE. EXPLORE.</span></footer>
+    </section>
+    {% if current_user.is_authenticated and section == "home" and not query %}{% include "_student_profile_card.html" %}{% endif %}
+  </div>
+</main>
+
+<dialog class="lab-dialog" id="lab-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close experiment details">×</button></form><span class="eyebrow"><span class="eyebrow-line"></span> LAB EXPERIMENT</span><h2 id="lab-dialog-title"></h2><p id="lab-dialog-aim"></p><p class="dialog-note">Experiment handout and reference materials will appear here as they are added to the library.</p><button class="button button-primary" type="button" data-close-dialog>Close</button></dialog>
+<div class="library-toast" role="status" aria-live="polite"></div>
+{% include "_libra_assistant.html" %}
+{% endblock %}

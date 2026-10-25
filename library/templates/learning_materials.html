@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}My Learning Materials | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% include "_student_header.html" %}
+<main class="digital-library-main">
+  <div class="learning-page materials-page">
+    <a class="back-link" href="{{ url_for('library.dashboard') }}">← Back to Dashboard</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Dashboard</a><span>›</span><span>My Learning Materials</span></nav>
+    <header class="learning-hero"><span class="eyebrow"><span class="eyebrow-line"></span> YOUR PRIVATE + OFFICIAL STUDY SPACE</span><h1>My Learning Materials<span class="title-period">.</span></h1><p>Keep your own AI study modules, lecturer-provided materials and official lab experiments together. Personal content stays private; faculty content follows your department and section.</p></header>
+    <section class="learning-card add-material-panel">
+      <div><span class="material-icon">＋</span><h2>+ Add Learning Material</h2><p>Choose what you want to create or save.</p></div>
+      <div class="material-action-row">
+        <a class="button button-primary" href="{{ url_for('library.create_personal_module') }}">✦ Generate Module with AI</a>
+        <a class="button button-secondary" href="#personal-resource-form">＋ Create Personal Notes / Resource</a>
+        <a class="button button-secondary" href="{{ url_for('library.student_faculty_modules') }}">▤ Browse Faculty Modules</a>
+        <a class="button button-secondary" href="{{ url_for('library.faculty_lab_experiments') }}">⚗ Browse Faculty Lab Experiments</a>
+      </div>
+      <div class="faculty-authoring-actions">
+        {% if is_faculty %}
+        <h3>Faculty authoring</h3>
+        <div class="material-action-row"><a class="button button-secondary" href="{{ url_for('library.faculty_learning_materials') }}">＋ Create Faculty Module</a><a class="button button-secondary" href="{{ url_for('library.faculty_lab_experiments') }}#experiment-form">＋ Add Lab Experiment</a></div>
+        {% else %}
+        <p>Official faculty modules and lab experiments can only be added by authorized lecturer accounts. Students can create personal AI modules above and browse published faculty materials below.</p>
+        {% endif %}
+      </div>
+    </section>
+    <form class="global-library-search materials-search" method="get" action="{{ url_for('library.learning_materials') }}" role="search"><span aria-hidden="true">⌕</span><input name="q" type="search" value="{{ query }}" placeholder="Search your notes, faculty materials and experiments" aria-label="Search learning materials"><button type="submit">Search →</button></form>
+    <section class="catalog-section">
+      <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> PRIVATE TO YOUR ACCOUNT</span><h2>My AI Modules</h2><p>AI-generated personal notes you can edit, bookmark, duplicate and regenerate.</p></div><a class="button button-primary" href="{{ url_for('library.create_personal_module') }}">+ Create My Own Module</a></div>
+      {% if personal_modules %}
+      <div class="material-card-grid">
+        {% for module in personal_modules %}
+        {% set pct = personal_progress.get(module.id, 0) %}
+        <article class="material-card"><div class="material-card-heading"><span class="material-badge ai-badge">✦ AI-Generated Personal Notes</span><form method="post" action="{{ url_for('library.bookmark_personal_module', module_id=module.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="bookmark-button" aria-label="{{ 'Remove bookmark' if module.is_bookmarked else 'Bookmark module' }}">{{ "★" if module.is_bookmarked else "☆" }}</button></form></div><h3>{{ module.title }}</h3><p>{{ module.subject }} · {{ module.difficulty }} · {{ module.depth }}</p><p class="material-topics">{{ module.topics }}</p><div class="module-progress-heading"><span>Topics studied</span><b>{{ pct }}%</b></div><div class="module-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct }}"><span style="width:{{ pct }}%"></span></div><small>Updated {{ module.updated_at.strftime("%b %d, %Y") }}</small><a class="catalog-card-action" href="{{ url_for('library.personal_module_detail', module_id=module.id) }}">Open my module →</a><a class="concept-view-button" href="{{ url_for('library.personal_module_detail', module_id=module.id) }}#added-learning-content">View Added Content</a><a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='personal_module', parent_id=module.id, concept=module.title) }}">+ Add</a></article>
+        {% endfor %}
+      </div>
+      {% else %}<div class="empty-state"><span>✦</span><h3>Your personal modules start here</h3><p>Generate private study notes with a configured AI provider, then revise them as you learn.</p><a class="button button-primary" href="{{ url_for('library.create_personal_module') }}">+ Create My Own Module</a></div>{% endif %}
+    </section>
+    <section class="catalog-section">
+      <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> OFFICIAL COURSE CONTENT</span><h2>Faculty Modules</h2><p>Notes, slides, assignments, syllabi and links shared with your department and section.</p></div><a class="text-link text-link-strong" href="{{ url_for('library.student_faculty_modules') }}">Browse all faculty modules →</a></div>
+      {% if faculty_modules %}<div class="material-card-grid">{% for module in faculty_modules %}{% set item_progress = faculty_progress.get(module.id) %}{% set pct = item_progress.percentage if item_progress else 0 %}<article class="material-card"><span class="material-badge faculty-badge">▤ Faculty-provided</span><h3>{{ module.title }}</h3><p>{{ module.subject }}{% if module.module_number %} · Module {{ module.module_number }}{% endif %}</p><p>{{ module.description }}</p><div class="module-progress-heading"><span>Progress</span><b>{{ pct }}%</b></div><div class="module-progress"><span style="width:{{ pct }}%"></span></div><a class="catalog-card-action" href="{{ url_for('library.faculty_material_detail', material_id=module.id) }}">Open faculty module →</a><a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='faculty_module', parent_id=module.id, concept=module.title) }}">+ Add personal note</a></article>{% endfor %}</div>{% else %}<p class="empty-material-note">No published faculty modules currently match your group.</p>{% endif %}
+    </section>
+    <section class="catalog-section">
+      <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> OFFICIAL PRACTICALS</span><h2>Faculty Lab Experiments</h2><p>Follow lecturer-provided procedures, inspect source code and prepare for viva.</p></div><a class="text-link text-link-strong" href="{{ url_for('library.faculty_lab_experiments') }}">Browse experiments →</a></div>
+      {% if experiments %}<div class="material-card-grid">{% for experiment in experiments %}{% set item_progress = experiment_progress.get(experiment.id) %}{% set pct = item_progress.percentage if item_progress else 0 %}<article class="material-card"><div class="material-card-heading"><span class="material-badge lab-badge">⚗ Experiment {{ experiment.experiment_number }}</span><form method="post" action="{{ url_for('library.toggle_faculty_material_bookmark', material_type='faculty_experiment', material_id=experiment.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="bookmark-button" aria-label="{{ 'Remove bookmark' if experiment.id in bookmarked_experiments else 'Bookmark experiment' }}">{{ "★" if experiment.id in bookmarked_experiments else "☆" }}</button></form></div><h3>{{ experiment.title }}</h3><p>{{ experiment.subject }}</p><div class="module-progress-heading"><span>Progress</span><b>{{ pct }}%</b></div><div class="module-progress"><span style="width:{{ pct }}%"></span></div><a class="catalog-card-action" href="{{ url_for('library.faculty_experiment_detail', experiment_id=experiment.id) }}">View Experiment →</a><a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='faculty_experiment', parent_id=experiment.id, concept=experiment.title) }}">+ Add personal note</a></article>{% endfor %}</div>{% else %}<p class="empty-material-note">No published faculty lab experiments currently match your group.</p>{% endif %}
+    </section>
+    <section class="catalog-section" id="personal-resource-form">
+      <div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> PRIVATE STUDY MATERIAL</span><h2>Personal Notes & Resources</h2><p>Save a useful web link or upload your own study file. Only you can access these materials.</p></div></div>
+      <form class="learning-card faculty-draft-form" method="post" enctype="multipart/form-data" action="{{ url_for('library.personal_resources') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="personal-title">Title</label><input id="personal-title" name="title" maxlength="160" required><label for="personal-description">Description</label><textarea id="personal-description" name="description" maxlength="1000" rows="2"></textarea><label for="personal-url">Resource link (optional)</label><input id="personal-url" name="resource_url" type="url" maxlength="1000" placeholder="https://..."><label for="personal-file">Upload file (optional, max 25 MB)</label><input id="personal-file" name="attachment" type="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.rtf,.csv,.py,.sql,.png,.jpg,.jpeg,.gif,.webp,.zip"><button class="button button-primary" type="submit">Save Personal Material</button></form>
+      {% if personal_resources %}<div class="material-card-grid">{% for resource in personal_resources %}<article class="material-card"><span class="material-badge ai-badge">Private to you</span><h3>{{ resource.title }}</h3><p>{{ resource.description }}</p><a class="catalog-card-action" href="{{ url_for('library.personal_resource_detail', resource_id=resource.id) }}">Study resource →</a>{% if resource.resource_url %}<a class="catalog-card-action" href="{{ resource.resource_url }}" target="_blank" rel="noopener noreferrer">Open link ↗</a>{% endif %}{% if resource.attachment_path %}<a class="catalog-card-action" href="{{ url_for('library.download_personal_resource', resource_id=resource.id) }}">Download {{ resource.attachment_name }} ↓</a>{% if resource.attachment_name.lower().endswith((".pdf",".png",".jpg",".jpeg",".gif",".webp",".txt",".md",".csv",".rtf",".py",".sql")) %}<a class="catalog-card-action" href="{{ url_for('library.preview_personal_resource', resource_id=resource.id) }}" target="_blank" rel="noopener noreferrer">Preview ↗</a>{% endif %}{% endif %}</article>{% endfor %}</div>{% endif %}
+    </section>
+  </div>
+</main>
+{% include "_libra_assistant.html" %}
+{% endblock %}

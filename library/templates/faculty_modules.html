@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Faculty Content Review | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% set section = "modules" %}
+{% include "_student_header.html" %}
+<main class="digital-library-main">
+  <div class="learning-page">
+    <a class="back-link" href="{{ url_for('library.dashboard') }}">← Back to Dashboard</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Home</a><span>›</span><span>Faculty content review</span></nav>
+    <header class="profile-page-heading"><span class="eyebrow"><span class="eyebrow-line"></span> AUTHORIZED FACULTY</span><h1>Content Review<span class="title-period">.</span></h1><p>Prepare curriculum-grounded drafts and review them before students can see them.</p></header>
+    <section class="learning-card">
+      <h2>Create a curriculum draft</h2>
+      <p>Choose a source course module for grounding. The demo mode copies a scaffold for faculty editing. Configured providers generate a draft from this approved curriculum only. No draft is visible to students until faculty review and approval.</p>
+      <form method="post" class="faculty-draft-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="source-module">Curriculum source</label><select id="source-module" name="source_module" required>{% for module in sources %}<option value="{{ module.slug }}">{{ module.title }}</option>{% endfor %}</select>
+        <label for="target-topic">Target topic</label><input id="target-topic" name="topic" maxlength="160" placeholder="For example: probability distributions" required>
+        <label for="draft-title">Draft title</label><input id="draft-title" name="title" maxlength="160" required>
+        <label for="draft-description">Description</label><textarea id="draft-description" name="description" maxlength="500" rows="3" required></textarea>
+        <label for="content-provider">Draft provider</label><select id="content-provider" name="provider"><option value="demo">Curriculum scaffold (demo)</option><option value="chatgpt">ChatGPT (server key required)</option><option value="gemini">Gemini (server key required)</option><option value="copilot">Compatible endpoint (server config required)</option></select>
+        <p>External provider requests send only the selected published curriculum and topic, never student progress or profile details.</p>
+        <button class="button button-primary" type="submit">Generate draft for faculty review</button>
+      </form>
+    </section>
+    <section class="learning-card">
+      <h2>Pending faculty review</h2>
+      {% if drafts %}<div class="notification-list">{% for draft in drafts %}<article class="notification-card"><div><h2>{{ draft.title }}</h2><p>{{ draft.description }}</p><small>Created by {{ draft.created_by }} · {{ draft.created_at.strftime("%b %d, %Y") }}</small></div><a class="button button-primary" href="{{ url_for('library.review_module_draft', draft_id=draft.id) }}">Review draft</a></article>{% endfor %}</div>
+      {% else %}<p>No curriculum drafts are awaiting review.</p>{% endif %}
+    </section>
+  </div>
+</main>
+{% endblock %}

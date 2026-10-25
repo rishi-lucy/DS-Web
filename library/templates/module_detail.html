@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ module.title }} | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% set section = "modules" %}
+{% include "_student_header.html" %}
+<main class="digital-library-main">
+  <div class="learning-page">
+    <a class="back-link" href="{{ url_for('library.dashboard', section='modules') }}">← Back to Modules</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Home</a><span>›</span><a href="{{ url_for('library.dashboard', section='modules') }}">Modules</a><span>›</span><span>{{ module.title }}</span></nav>
+    <header class="learning-hero">
+      <span class="eyebrow"><span class="eyebrow-line"></span> MODULE {{ "%02d"|format(module.order_index) }} · {{ module.subject|upper }}</span>
+      <h1>{{ module.title }}<span class="title-period">.</span></h1>
+      <p>{{ module.description }}</p>
+      <div class="module-meta"><span>{{ module.difficulty }}</span><span>About {{ module.estimated_minutes }} minutes</span>{% if progress %}<span>{{ progress.percentage }}% complete</span>{% else %}<span>Public curriculum · progress is not recorded</span>{% endif %}{% if module.is_faculty_approved %}<span class="verified-content">✓ Faculty approved</span>{% endif %}</div>
+      {% if current_user.is_authenticated %}<div class="material-action-row"><a class="button button-primary" href="{{ url_for('library.add_learning_content', parent_type='module', parent_id=module.slug, concept=module.title) }}">+ Add Content to {{ module.title }}</a><a class="button button-secondary" href="#added-learning-content">View Added Content ({{ content_entries|length }})</a></div>{% endif %}
+    </header>
+    <section class="learning-card">
+      <h2>Learning objectives</h2><p>After completing this module, you will be able to:</p>
+      <ul class="learning-checklist">{% for objective in content.objectives %}<li>{{ objective }}</li>{% endfor %}</ul>
+    </section>
+    {% if content.visual %}
+    <figure class="learning-visual">
+      <figcaption><b>{{ {"lifecycle": "Data-science lifecycle", "pipeline": "A reproducible data workflow", "distribution": "Comparing a skewed distribution", "chart": "Visualizing change over time", "ml-workflow": "Machine-learning workflow", "neural-network": "Neural-network layers"}[content.visual] }}</b><span>A conceptual diagram for this module</span></figcaption>
+      <div class="visual-flow" role="img" aria-label="{{ module.title }} learning diagram">
+        {% if content.visual == "lifecycle" %}{% for step in ["Question", "Collect", "Prepare", "Explore", "Validate", "Communicate"] %}<span>{{ step }}</span>{% if not loop.last %}<i aria-hidden="true">→</i>{% endif %}{% endfor %}
+        {% elif content.visual == "ml-workflow" %}{% for step in ["Define task", "Prepare data", "Train model", "Evaluate", "Monitor"] %}<span>{{ step }}</span>{% if not loop.last %}<i aria-hidden="true">→</i>{% endif %}{% endfor %}
+        {% elif content.visual == "neural-network" %}{% for step in ["Input", "Hidden layers", "Output", "Loss & update"] %}<span>{{ step }}</span>{% if not loop.last %}<i aria-hidden="true">→</i>{% endif %}{% endfor %}
+        {% elif content.visual == "chart" %}<div class="mini-chart" aria-hidden="true"><i style="height:38%"></i><i style="height:65%"></i><i style="height:52%"></i><i style="height:82%"></i><i style="height:71%"></i></div><span>Monthly values →</span>
+        {% elif content.visual == "distribution" %}<div class="distribution-chart" aria-hidden="true"><i style="height:20%"></i><i style="height:43%"></i><i style="height:76%"></i><i style="height:90%"></i><i style="height:54%"></i><i style="height:29%"></i><i style="height:14%"></i></div><span>Values →</span>
+        {% else %}{% for step in ["Inspect", "Transform", "Check", "Document"] %}<span>{{ step }}</span>{% if not loop.last %}<i aria-hidden="true">→</i>{% endif %}{% endfor %}{% endif %}
+      </div>
+      <p class="visual-caption">{{ module.description }}</p>
+    </figure>
+    {% endif %}
+    {% for lesson in content.lessons %}
+    <article class="learning-card lesson-card"><div class="concept-heading-row"><span class="lesson-number">{{ "%02d"|format(loop.index) }}</span><h2>{{ lesson.title }}</h2>{% if current_user.is_authenticated %}<a class="concept-add-button" href="{{ url_for('library.add_learning_content', parent_type='module', parent_id=module.slug, concept=lesson.title) }}">+ Add</a>{% endif %}</div><p>{{ lesson.content }}</p></article>
+    {% endfor %}
+    {% if content.definitions %}<section class="learning-card"><h2>Important definitions</h2><dl class="definition-list">{% for entry in content.definitions %}<div><dt>{{ entry.term }}</dt><dd>{{ entry.definition }}</dd></div>{% endfor %}</dl></section>{% endif %}
+    {% if content.formulas %}<section class="learning-card"><h2>Formulas</h2><ul>{% for formula in content.formulas %}<li><code>{{ formula }}</code></li>{% endfor %}</ul></section>{% endif %}
+    <section class="learning-card"><h2>Worked example</h2><p>{{ content.example }}</p></section>
+    <section class="learning-card"><h2>Python example</h2><p>Run this small example in a Python environment and inspect its output.</p><pre><code>{{ content.python }}</code></pre></section>
+    {% if content.sql %}<section class="learning-card"><h2>SQL example</h2><pre><code>{{ content.sql }}</code></pre></section>{% endif %}
+    {% if content.lab %}<section class="learning-card"><h2>Lab exercises</h2><ol>{% for exercise in content.lab %}<li>{{ exercise }}</li>{% endfor %}</ol></section>{% endif %}
+    <section class="learning-card"><h2>Practice questions</h2><ol>{% for question in content.practice %}<li>{{ question }}</li>{% endfor %}</ol></section>
+    <section class="learning-card"><h2>Knowledge check</h2><p>{% if current_user.is_authenticated %}Answer these questions, then submit to record your result and update your learning activity.{% else %}Review these questions as you study. Quiz submissions and progress tracking are available only in student accounts.{% endif %}</p>
+      {% if quiz_result %}
+      <div class="quiz-result" role="status">
+        <h3>Your latest score: {{ quiz_result.score }} of {{ quiz_result.total }}</h3>
+        {% for question in quiz_result.questions %}
+        {% set answer_index = loop.index0 %}
+        <p><strong>{{ question.question }}</strong><br>
+          Your answer: {{ question.choices[quiz_result.answers[answer_index]] }}.
+          {% if quiz_result.answers[answer_index] == question.answer %}Correct.{% else %}Correct answer: {{ question.choices[question.answer] }}.{% endif %}
+          {{ question.explanation }}
+        </p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if current_user.is_authenticated %}<form method="post" action="{{ url_for('library.submit_module_quiz', slug=module.slug) }}" class="module-quiz"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for question in content.mcqs %}{% set question_index = loop.index0 %}<fieldset><legend>{{ loop.index }}. {{ question.question }}</legend>{% for choice in question.choices %}<label><input type="radio" name="answer_{{ question_index }}" value="{{ loop.index0 }}" required> {{ choice }}</label>{% endfor %}</fieldset>{% endfor %}
+        <button class="button button-primary" type="submit">Submit quiz</button>
+      </form>{% else %}<ol class="public-quiz-questions">{% for question in content.mcqs %}<li><strong>{{ question.question }}</strong><ul>{% for choice in question.choices %}<li>{{ choice }}</li>{% endfor %}</ul></li>{% endfor %}</ol>{% endif %}
+    </section>
+    {% if content.interview %}<section class="learning-card"><h2>Interview questions</h2><ol>{% for question in content.interview %}<li>{{ question }}</li>{% endfor %}</ol></section>{% endif %}
+    {% if content.resources %}<section class="learning-card"><h2>Further learning</h2><ul class="external-resources">{% for resource in content.resources %}<li><a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">{{ resource.title }} ↗</a>{% if resource.external %}<small>External resource</small>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+    <section class="learning-card"><h2>Module summary</h2><ul>{% for point in content.summary %}<li>{{ point }}</li>{% endfor %}</ul></section>
+    {% if current_user.is_authenticated %}<section class="catalog-section learning-content-list" id="added-learning-content"><div class="catalog-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> SAVED UNDER THIS MODULE</span><h2>Added Learning Content</h2><p>Personal notes and authorized faculty materials, grouped by the selected topic.</p></div></div>{% set content_concept_name = "" %}{% include "_learning_content_entries.html" %}</section>
+    <section class="module-actions">
+      <form method="post" action="{{ url_for('library.complete_module', slug=module.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button button-primary" type="submit">{{ "Completed ✓" if progress.percentage == 100 else "Complete module" }}</button></form>
+      <form method="post" action="{{ url_for('library.record_study_session', slug=module.slug) }}" class="study-session-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="study-duration">Log study time you just completed</label><select id="study-duration" name="duration_minutes"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select><button type="submit">Save time</button></form>
+    </section>{% endif %}
+    {% if next_module %}<a class="next-module-link" href="{{ url_for('library.module_detail', slug=next_module.slug) }}">Next recommended topic: {{ next_module.title }} →</a>{% endif %}
+  </div>
+</main>
+{% include "_libra_assistant.html" %}
+{% endblock %}

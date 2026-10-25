@@ -1,0 +1,33 @@
+<aside class="student-profile-panel" aria-labelledby="student-profile-title">
+  <section class="learning-spotlight" aria-label="Your study shelf">
+    <span class="eyebrow"><span class="eyebrow-line"></span> YOUR STUDY SHELF</span>
+    <div class="spotlight-book" aria-hidden="true"><span>{{ current_user.subject or "Data Science" }}</span></div>
+    <h2>{{ current_user.subject or "Data Science" }}</h2>
+    <p>Your course, notes, and practical learning in one place.</p>
+    <a href="{{ url_for('library.dashboard', section='modules') }}">Browse course modules <span aria-hidden="true">→</span></a>
+  </section>
+  <section class="student-profile-card">
+    <div class="profile-card-heading"><div><h2>Student Profile</h2><span class="eyebrow"><span class="eyebrow-line"></span> YOUR ACADEMIC DETAILS</span></div><a href="{{ url_for('library.profile') }}" aria-label="Edit student profile">↗</a></div>
+    <div class="profile-person">
+      {% if current_user.profile_image %}
+      <img class="profile-photo" src="{{ url_for('static', filename=current_user.profile_image) }}" alt="Student profile photo">
+      {% else %}
+      <img class="profile-photo" src="{{ url_for('static', filename='images/student-profile.png') }}" alt="Student profile photo">
+      {% endif %}
+      <h2 id="student-profile-title">{{ current_user.full_name }}</h2>
+      <p>{{ current_user.branch }} · Student</p>
+    </div>
+    <dl class="student-details">
+      <div><dt><span aria-hidden="true">👤</span>Name</dt><dd>{{ current_user.full_name }}</dd></div>
+      <div><dt><span aria-hidden="true">🆔</span>Roll Number</dt><dd>{{ current_user.student_id }}</dd></div>
+      <div><dt><span aria-hidden="true">💻</span>Branch</dt><dd>{{ current_user.branch }}</dd></div>
+      <div><dt><span aria-hidden="true">🏫</span>Department</dt><dd>{{ current_user.department }}</dd></div>
+      <div><dt><span aria-hidden="true">📚</span>Section</dt><dd>{{ current_user.section }}</dd></div>
+      <div><dt><span aria-hidden="true">📖</span>Subject</dt><dd>{{ current_user.subject }}</dd></div>
+      <div><dt><span aria-hidden="true">👨‍🏫</span>Faculty</dt><dd>{{ current_user.faculty_name }}</dd></div>
+      <div><dt><span aria-hidden="true">🎓</span>Designation</dt><dd>{{ current_user.faculty_designation }}</dd></div>
+    </dl>
+    <a class="profile-edit-link" href="{{ url_for('library.profile') }}">View student profile <span aria-hidden="true">→</span></a>
+  </section>
+  <div class="profile-aside-note"><span>✳</span><p>Learn. Practice. Explore.<br><b>Build your future with Data Science.</b></p></div>
+</aside>

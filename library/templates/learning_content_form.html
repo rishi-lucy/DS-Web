@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if editing else "Add" }} Content | {{ parent_title }}{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}{% include "_student_header.html" %}
+<main class="digital-library-main"><div class="learning-page">
+  <a class="back-link" href="{{ parent_url }}">← Back to {{ parent_title }}</a>
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Dashboard</a><span>›</span><a href="{{ parent_url }}">{{ parent_title }}</a><span>›</span><span>{{ "Edit content" if editing else "Add content" }}</span></nav>
+  <header class="learning-hero"><span class="eyebrow"><span class="eyebrow-line"></span> {{ "EDIT SAVED MATERIAL" if editing else "ADD TO THIS CONCEPT" }}</span><h1>{{ "Edit content" if editing else "Add content" }}<span class="title-period">.</span></h1><p>Parent: {{ parent_title }}{% if concept %} · Concept: {{ concept }}{% endif %}. New entries are saved independently and will appear on this concept's detail page.</p></header>
+  <form class="learning-card faculty-draft-form learning-content-form" method="post" enctype="multipart/form-data" data-learning-content-form>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="content-title">Content title *</label><input id="content-title" name="title" maxlength="160" value="{{ editing.title if editing else '' }}" required>
+    <label for="content-topic">Topic or subtopic *</label><input id="content-topic" name="topic" maxlength="160" value="{{ edit_fields.topic if editing else concept or parent_title }}" required>
+    <label for="content-type">Content type</label><select id="content-type" name="content_type">{% for value,label in [("notes","Detailed notes"),("code","Code example"),("diagram","Diagram or image"),("file","Study file"),("questions","Practice questions"),("other","Other")] %}<option value="{{ value }}" {% if editing and editing.content_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <label for="content-body">Detailed explanation or notes *</label><textarea id="content-body" name="body" rows="7" maxlength="100000" required>{{ edit_fields.body if editing else '' }}</textarea>
+    {% if parent_type in ["lab","faculty_experiment"] %}<fieldset class="learning-content-lab-fields"><legend>Lab experiment details</legend>
+      {% for key,label in [("aim","Aim"),("requirements","Requirements"),("theory","Theory"),("procedure","Procedure or algorithm"),("result","Result"),("viva_questions","Viva questions and answers")] %}<label for="entry-{{ key }}">{{ label }}</label><textarea id="entry-{{ key }}" name="{{ key }}" rows="3">{{ edit_fields.get(key,"") if editing else "" }}</textarea>{% endfor %}
+    </fieldset>{% endif %}
+    <label for="content-code">Code example</label><textarea id="content-code" name="code" rows="5">{{ edit_fields.code if editing else '' }}</textarea>
+    <label for="content-input">Sample input</label><textarea id="content-input" name="sample_input" rows="2">{{ edit_fields.sample_input if editing else '' }}</textarea>
+    <label for="content-output">Sample output</label><textarea id="content-output" name="sample_output" rows="2">{{ edit_fields.sample_output if editing else '' }}</textarea>
+    <label for="content-questions">Practice questions</label><textarea id="content-questions" name="practice_questions" rows="3">{{ edit_fields.practice_questions if editing else '' }}</textarea>
+    <label for="content-references">Reference links (one HTTP/HTTPS URL per line)</label><textarea id="content-references" name="references" rows="2">{% if editing %}{{ edit_fields.references|join('\n') }}{% endif %}</textarea>
+    <label for="content-tags">Optional tags</label><input id="content-tags" name="tags" maxlength="500" value="{{ edit_fields.tags if editing else '' }}" placeholder="e.g. regression, Python, revision">
+    <label for="content-attachment">Upload an image, diagram, PDF, PPT, DOCX, text, code, or ZIP file (max 25 MB)</label><input id="content-attachment" name="attachment" type="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.rtf,.csv,.py,.sql,.png,.jpg,.jpeg,.gif,.webp,.zip">
+    {% if editing and editing.attachment_name %}<p>Current attachment: {{ editing.attachment_name }}. Uploading a new file replaces this attachment.</p>{% endif %}
+    {% if is_faculty_user %}<fieldset><legend>Visibility</legend><label><input type="radio" name="visibility" value="personal" {% if not editing or editing.visibility == "personal" %}checked{% endif %}> My Personal Notes</label><label><input type="radio" name="visibility" value="official" {% if editing and editing.visibility == "official" %}checked{% endif %}> Official Faculty Content</label></fieldset>{% else %}<p class="form-note">Saved as private personal notes visible only to you.</p>{% endif %}
+    <div class="material-action-row"><button class="button button-primary" type="submit">Save</button><a class="button button-secondary" href="{{ parent_url }}">Cancel</a><button class="button button-secondary" type="button" data-content-preview-toggle>Preview</button></div>
+  </form>
+  <section class="learning-card content-entry-preview" data-content-preview hidden><h2 data-preview-title>Preview</h2><p data-preview-topic></p><div data-preview-body></div><pre data-preview-code></pre></section>
+</div></main>{% include "_libra_assistant.html" %}{% endblock %}

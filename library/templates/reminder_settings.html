@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Reminder Settings | Student Digital Library{% endblock %}
+{% block body_class %}app-body digital-library-body{% endblock %}
+{% block content %}
+{% set section = "notifications" %}
+{% include "_student_header.html" %}
+<main class="digital-library-main">
+  <div class="learning-page">
+    <a class="back-link" href="{{ url_for('library.notifications') }}">← Back to Notifications</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('library.dashboard') }}">Home</a><span>›</span><a href="{{ url_for('library.notifications') }}">Notifications</a><span>›</span><span>Reminder settings</span></nav>
+    <header class="profile-page-heading"><span class="eyebrow"><span class="eyebrow-line"></span> YOUR PREFERENCES</span><h1>Reminder Settings<span class="title-period">.</span></h1><p>Daily reminders are in-app only and are created at most once per day when you visit your dashboard after the selected time.</p></header>
+    <form method="post" class="learning-card faculty-draft-form reminder-settings-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="reminder-enabled"><input type="checkbox" name="reminders_enabled" {% if current_user.reminders_enabled %}checked{% endif %}> Enable one daily learning reminder</label>
+      <label for="reminder-time">Preferred reminder time (UTC)</label><input id="reminder-time" name="reminder_time" type="time" value="{{ current_user.reminder_time }}" required>
+      <label for="quiet-start">Quiet hours start (UTC)</label><input id="quiet-start" name="quiet_start" type="time" value="{{ current_user.quiet_start }}" required>
+      <label for="quiet-end">Quiet hours end (UTC)</label><input id="quiet-end" name="quiet_end" type="time" value="{{ current_user.quiet_end }}" required>
+      <button class="button button-primary" type="submit">Save reminder settings</button>
+    </form>
+    <p class="detail-note">Notifications are not sent by email or push. The app must be open and the dashboard visited after the reminder time.</p>
+  </div>
+</main>
+{% endblock %}
