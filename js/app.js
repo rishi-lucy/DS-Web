@@ -114,8 +114,8 @@ function profile(){const f=S.social,ic=[
 return `<aside class="card">
  <div class="row sp"><div><div class="lbl">Profile / 2026</div><h2>Student details</h2></div>${avatar()}</div>
  <dl><dt>Name</dt><dd>${esc(S.name)}</dd><dt>Roll No</dt><dd>${esc(S.rollNo)}</dd><dt>Department</dt><dd>${esc(S.department)}</dd><dt>Section</dt><dd>${esc(S.section)}</dd><dt>Subject</dt><dd>${esc(S.subject)}</dd><dt>Faculty</dt><dd>${esc(S.faculty)}<div class="lbl" style="font-size:9px">${esc(S.designation)}</div></dd></dl>
- <div class="row" style="margin-top:8px"><a href="pages/about.html" class="more">View More</a></div>
- <div class="row" style="margin-top:12px"><a class="btn" href="pages/student.html">ID Card</a><button class="btn" onclick="editP()">Edit profile</button></div>
+ <div class="row" style="margin-top:8px"><a href="about.html" class="more">View More</a></div>
+ <div class="row" style="margin-top:12px"><a class="btn" href="student.html">ID Card</a><button class="btn" onclick="editP()">Edit profile</button></div>
 </aside>`}
 
 let _newPhoto=null,_photoRemoved=false;
@@ -174,7 +174,7 @@ function home(){
   <div class="eyebrow"><span class="dot"></span>B.Tech Data Science · Academic year 2026</div>
   <h1>Learn Smarter.<br>Build Bigger.<br><span class="grad-text">Explore More.</span></h1>
   <p class="hero-sub">Your all-in-one destination for data science modules, experiments, developer tools, learning resources, and student projects.</p>
-  <div class="hero-cta"><a class="btn primary lg ph" href="pages/resources.html">Explore Resources <span class="arr">→</span></a><a class="btn ghost lg" href="pages/projects.html">View Projects <span class="arr">→</span></a></div>
+  <div class="hero-cta"><a class="btn primary lg ph" href="resources.html">Explore Resources <span class="arr">→</span></a><a class="btn ghost lg" href="projects.html">View Projects <span class="arr">→</span></a></div>
   <div class="search-wrap hero-search">${IC.search}<input id="gs" placeholder="Search modules, experiments, topics…" aria-label="Search the portal" autocomplete="off" oninput="gsearch()" onkeydown="if(event.key==='Enter'){const a=$('#gr a');if(a)location.href=a.getAttribute('href')}"><kbd>/</kbd></div>
   <div id="gr" class="search-pop" aria-live="polite"></div>
   <div class="tagrow" style="margin-top:16px"><span class="chip">${modules.length} modules</span><span class="chip yellow">${ALL.length} experiments</span><span class="chip plain">${subs} sub-experiments</span><span class="chip plain">${tools.length} tools</span></div>
@@ -199,30 +199,30 @@ df = pd.<span class="fn">read_csv</span>(<span class="st">"data.csv"</span>)
 </section>
 
 <section class="sec">
- <div class="section-head"><div><div class="eyebrow">Everything in one place</div><h2>Explore the portal</h2><p>Six connected spaces for the whole Data Science journey — from first principles to a finished project.</p></div><a class="link-arrow" href="pages/modules.html">Browse the curriculum <span>→</span></a></div>
+ <div class="section-head"><div><div class="eyebrow">Everything in one place</div><h2>Explore the portal</h2><p>Six connected spaces for the whole Data Science journey — from first principles to a finished project.</p></div><a class="link-arrow" href="modules.html">Browse the curriculum <span>→</span></a></div>
  <div class="feat-grid stagger">
-  <a class="card feature-card reveal" href="pages/modules.html" style="--i:0"><div class="icon-orb">${IC.modules}</div><h3>Learning Modules</h3><p>Five structured modules covering foundations, preparation, analysis, machine learning and deployment.</p><span class="go">Open modules <span>→</span></span></a>
-  <a class="card feature-card reveal" href="pages/experiments.html" style="--i:1"><div class="icon-orb">${IC.experiments}</div><h3>Experiments</h3><p>Six practical labs with ${subs} guided sub-experiments, runnable code and expected outputs.</p><span class="go">Enter the lab <span>→</span></span></a>
-  <a class="card feature-card reveal" href="pages/tools.html" style="--i:2"><div class="icon-orb">${IC.tools}</div><h3>Developer Tools</h3><p>The Python, notebook, visualisation and BI toolkit used throughout the course.</p><span class="go">See the toolkit <span>→</span></span></a>
-  <a class="card feature-card reveal" href="pages/resources.html" style="--i:3"><div class="icon-orb">${IC.resources}</div><h3>Digital Resources</h3><p>Documentation, tutorials and study notes in one searchable knowledge hub.</p><span class="go">Browse resources <span>→</span></span></a>
-  <a class="card feature-card reveal" href="pages/projects.html" style="--i:4"><div class="icon-orb">${IC.projects}</div><h3>Student Projects</h3><p>Academic project ideas, technology stacks and live links from the project studio.</p><span class="go">Open the studio <span>→</span></span></a>
-  <a class="card feature-card reveal" href="pages/student.html" style="--i:5"><div class="icon-orb">${IC.student}</div><h3>Student Profile</h3><p>Your dashboard: modules completed, saved resources, recent projects and learning activity.</p><span class="go">View dashboard <span>→</span></span></a>
+  <a class="card feature-card reveal" href="modules.html" style="--i:0"><div class="icon-orb">${IC.modules}</div><h3>Learning Modules</h3><p>Five structured modules covering foundations, preparation, analysis, machine learning and deployment.</p><span class="go">Open modules <span>→</span></span></a>
+  <a class="card feature-card reveal" href="experiments.html" style="--i:1"><div class="icon-orb">${IC.experiments}</div><h3>Experiments</h3><p>Six practical labs with ${subs} guided sub-experiments, runnable code and expected outputs.</p><span class="go">Enter the lab <span>→</span></span></a>
+  <a class="card feature-card reveal" href="tools.html" style="--i:2"><div class="icon-orb">${IC.tools}</div><h3>Developer Tools</h3><p>The Python, notebook, visualisation and BI toolkit used throughout the course.</p><span class="go">See the toolkit <span>→</span></span></a>
+  <a class="card feature-card reveal" href="resources.html" style="--i:3"><div class="icon-orb">${IC.resources}</div><h3>Digital Resources</h3><p>Documentation, tutorials and study notes in one searchable knowledge hub.</p><span class="go">Browse resources <span>→</span></span></a>
+  <a class="card feature-card reveal" href="projects.html" style="--i:4"><div class="icon-orb">${IC.projects}</div><h3>Student Projects</h3><p>Academic project ideas, technology stacks and live links from the project studio.</p><span class="go">Open the studio <span>→</span></span></a>
+  <a class="card feature-card reveal" href="student.html" style="--i:5"><div class="icon-orb">${IC.student}</div><h3>Student Profile</h3><p>Your dashboard: modules completed, saved resources, recent projects and learning activity.</p><span class="go">View dashboard <span>→</span></span></a>
  </div>
 </section>
 
 <section class="sec home-split">
  <div class="home-main">
-  <div class="card"><div class="section-head"><div><div class="eyebrow">Course content</div><h2>Modules</h2></div><a class="link-arrow" href="pages/modules.html">All modules <span>→</span></a></div><div class="mg">${modules.map(m=>`<a class="box" href="pages/module.html?id=${m.id}"><span class="num">0${m.id}</span><span class="lbl">Module 0${m.id} · ${MOD_CAT[m.id]||"Core"}</span><b>${esc(m.title)}</b><span class="lbl" style="font-size:9px">${m.topics.length} topics · ${modulePct(m)}% complete</span></a>`).join("")}</div></div>
-  <div class="card"><div class="section-head"><div><div class="eyebrow">Practical learning</div><h2>Lab experiments</h2></div><a class="link-arrow" href="pages/experiments.html">All experiments <span>→</span></a></div><div class="mg">${ALL.map(e=>`<a class="box" href="pages/experiment.html?id=${e.id}"><span class="num">${esc(e.id)}</span><span class="lbl">${expSubject(e)} · ${expLevel(e)}</span><b>${esc(e.name)}</b><span class="lbl" style="font-size:9px">${e.subExperiments.length} parts · ${expPct(e)}% complete</span></a>`).join("")}</div></div>
+  <div class="card"><div class="section-head"><div><div class="eyebrow">Course content</div><h2>Modules</h2></div><a class="link-arrow" href="modules.html">All modules <span>→</span></a></div><div class="mg">${modules.map(m=>`<a class="box" href="module.html?id=${m.id}"><span class="num">0${m.id}</span><span class="lbl">Module 0${m.id} · ${MOD_CAT[m.id]||"Core"}</span><b>${esc(m.title)}</b><span class="lbl" style="font-size:9px">${m.topics.length} topics · ${modulePct(m)}% complete</span></a>`).join("")}</div></div>
+  <div class="card"><div class="section-head"><div><div class="eyebrow">Practical learning</div><h2>Lab experiments</h2></div><a class="link-arrow" href="experiments.html">All experiments <span>→</span></a></div><div class="mg">${ALL.map(e=>`<a class="box" href="experiment.html?id=${e.id}"><span class="num">${esc(e.id)}</span><span class="lbl">${expSubject(e)} · ${expLevel(e)}</span><b>${esc(e.name)}</b><span class="lbl" style="font-size:9px">${e.subExperiments.length} parts · ${expPct(e)}% complete</span></a>`).join("")}</div></div>
  </div>
  <aside class="home-side">${profile()}
-  <div class="card"><div class="section-head"><div><h2 style="font-size:15px">Recently added</h2><p style="font-size:12px">From your knowledge hub</p></div><a class="link-arrow" href="pages/resources.html">All <span>→</span></a></div><div class="p-list">${rs.slice(0,3).map(r=>`<a class="p-row" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('Add a resource URL first');return false"`}><span class="pn">${esc((r.type||"R").slice(0,2).toUpperCase())}</span><span class="pt">${esc(r.title)}</span><span class="ps">${esc(r.category||"")}</span></a>`).join("")}</div><a class="btn ghost block" style="margin-top:12px" href="pages/resources.html">${IC.plus} Add a resource</a></div>
+  <div class="card"><div class="section-head"><div><h2 style="font-size:15px">Recently added</h2><p style="font-size:12px">From your knowledge hub</p></div><a class="link-arrow" href="resources.html">All <span>→</span></a></div><div class="p-list">${rs.slice(0,3).map(r=>`<a class="p-row" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('Add a resource URL first');return false"`}><span class="pn">${esc((r.type||"R").slice(0,2).toUpperCase())}</span><span class="pt">${esc(r.title)}</span><span class="ps">${esc(r.category||"")}</span></a>`).join("")}</div><a class="btn ghost block" style="margin-top:12px" href="resources.html">${IC.plus} Add a resource</a></div>
  </aside>
 </section>
 
 <section class="sec">
- <div class="section-head"><div><div class="eyebrow">Project studio</div><h2>Recent projects</h2><p>Academic builds and ideas from your catalogue.</p></div><a class="link-arrow" href="pages/projects.html">Open projects <span>→</span></a></div>
- <div class="pgrid stagger">${ps.slice(0,3).map((p,i)=>`<article class="card prj-card reveal" style="--i:${i}"><div class="prj-art"><span class="glyph">0${i+1}</span><span class="pcat">${esc(p.category||"Project")}</span></div><div class="prj-body"><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p><div class="tech tagrow">${esc(p.tech||"").split(",").filter(Boolean).slice(0,3).map(t=>`<span class="chip plain">${esc(t.trim())}</span>`).join("")}</div><div class="card-actions"><a class="btn sm primary" href="pages/projects.html">Details <span class="arr">→</span></a></div></div></article>`).join("")}</div>
+ <div class="section-head"><div><div class="eyebrow">Project studio</div><h2>Recent projects</h2><p>Academic builds and ideas from your catalogue.</p></div><a class="link-arrow" href="projects.html">Open projects <span>→</span></a></div>
+ <div class="pgrid stagger">${ps.slice(0,3).map((p,i)=>`<article class="card prj-card reveal" style="--i:${i}"><div class="prj-art"><span class="glyph">0${i+1}</span><span class="pcat">${esc(p.category||"Project")}</span></div><div class="prj-body"><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p><div class="tech tagrow">${esc(p.tech||"").split(",").filter(Boolean).slice(0,3).map(t=>`<span class="chip plain">${esc(t.trim())}</span>`).join("")}</div><div class="card-actions"><a class="btn sm primary" href="projects.html">Details <span class="arr">→</span></a></div></div></article>`).join("")}</div>
 </section>`;
 }
 
@@ -236,7 +236,7 @@ function moduleCards(list){
    <h3>${esc(m.title)}</h3><p>${esc(m.description)}</p>
    <div class="mod-meta"><span>${IC.modules} ${m.topics.length} topics</span><span>${IC.book} Study guide</span><span>${IC.clock} ~45 min</span></div>
    ${modProg(m)}
-   <div class="card-actions"><a class="btn primary sm" href="pages/module.html?id=${m.id}">${pct>0?"Continue":"Open"} module <span class="arr">→</span></a><a class="btn sm ghost" href="pages/module.html?id=${m.id}#pdf">${IC.book} PDF</a></div>
+   <div class="card-actions"><a class="btn primary sm" href="module.html?id=${m.id}">${pct>0?"Continue":"Open"} module <span class="arr">→</span></a><a class="btn sm ghost" href="module.html?id=${m.id}#pdf">${IC.book} PDF</a></div>
    ${pct>0?`<div class="res-note">${pct>=100?"You completed this module.":"Last studied in this browser."}</div>`:""}
   </article>`}).join("");
 }
@@ -259,7 +259,7 @@ function modulesPage(){
 /* ---------------- module detail ---------------- */
 function modulePage(){
  const m=modules.find(x=>x.id==q.get("id"))||modules[0],pdf=`assets/modules/module-${m.id}.pdf`,pct=modulePct(m);
- return `<a class="btn sm ghost" href="pages/modules.html">← All modules</a>
+ return `<a class="btn sm ghost" href="modules.html">← All modules</a>
  <div class="detail-head" style="margin-top:14px">
   <div class="chips"><span class="chip">Module 0${m.id}</span><span class="chip yellow">${MOD_CAT[m.id]||"Core"}</span><span class="chip plain">${m.topics.length} topics</span></div>
   <h1>${esc(m.title)}</h1><p class="lede muted">${esc(m.description)}</p>
@@ -293,8 +293,8 @@ function expCard(e,i){
   <h3>${esc(e.name)}</h3><p>${esc(e.description)}</p>
   <div class="tagrow">${[...new Set(e.subExperiments.flatMap(s=>s.tools))].slice(0,4).map(t=>`<span class="chip plain">${esc(t)}</span>`).join("")}</div>
   <div class="prog"><div class="prog-head"><span>${expSubject(e)} · ${e.subExperiments.length} parts</span><span><b data-exppct="${e.id}">${pct}%</b></span></div><div class="bar-track"><i class="bar-fill" data-expbar="${e.id}" style="--w:${pct}%"></i></div></div>
-  <div class="sub-mini">${e.subExperiments.map(s=>`<a class="mini ${subDone(s.id)?"ok":""}" href="pages/subexperiment.html?experiment=${e.id}&sub=${s.id}" title="${esc(s.name)}" aria-label="${esc(s.id+" "+s.name)}">${esc(s.id.replace(e.id,""))}</a>`).join("")}</div>
-  <div class="card-actions"><a class="btn primary sm" href="pages/experiment.html?id=${e.id}">View experiment <span class="arr">→</span></a><a class="btn sm ghost" href="pages/subexperiment.html?experiment=${e.id}&sub=${e.subExperiments[0].id}">Start lab</a></div>
+  <div class="sub-mini">${e.subExperiments.map(s=>`<a class="mini ${subDone(s.id)?"ok":""}" href="subexperiment.html?experiment=${e.id}&sub=${s.id}" title="${esc(s.name)}" aria-label="${esc(s.id+" "+s.name)}">${esc(s.id.replace(e.id,""))}</a>`).join("")}</div>
+  <div class="card-actions"><a class="btn primary sm" href="experiment.html?id=${e.id}">View experiment <span class="arr">→</span></a><a class="btn sm ghost" href="subexperiment.html?experiment=${e.id}&sub=${e.subExperiments[0].id}">Start lab</a></div>
  </article>`;
 }
 function cards(list){
@@ -334,7 +334,7 @@ function experimentsPage(){
 function experimentPage(){
  const e=ALL.find(x=>x.id==q.get("id"))||ALL[0],pct=expPct(e);
  const sec=[["ov","Experiment overview",`<p>${esc(e.overview)}</p>`],["aim","Aim",`<p>${esc(e.aim)}</p>`],["ps","Problem statement",`<p>${esc(e.problemStatement)}</p>`],["ds","Dataset",`<p>${esc(e.dataset)}</p>`],["me","Methodology",`<ol>${e.methodology.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`],["an","Analysis",`<p>${esc(e.analysis)}</p>`],["re","Results",`<p>${esc(e.results)}</p>`],["ar","Architecture",`<div class="flow">${e.architecture.map((a,i)=>(i?"<i>↓</i>":"")+`<div class="card">${esc(a)}</div>`).join("")}</div>`]];
- return `<a class="btn sm ghost" href="pages/experiments.html">← All experiments</a>
+ return `<a class="btn sm ghost" href="experiments.html">← All experiments</a>
  <div class="detail-head" style="margin-top:14px">
   <div class="chips"><span class="chip">Experiment ${esc(e.id)}</span><span class="chip yellow">${expSubject(e)}</span><span class="chip plain">${expLevel(e)}</span>${statusPill(pct)}</div>
   <h1>${esc(e.name)}</h1><p class="lede muted">${esc(e.description)}</p>
@@ -346,7 +346,7 @@ function experimentPage(){
   <div class="grid" style="gap:16px">
    <div>${compilerPanel(e.subExperiments?.[0]?.code||"print(\"Hello from the experiment!\")","exp_"+e.id)}</div>
    ${sec.map(s=>`<section id="${s[0]}" class="card"><h2>${s[1]}</h2>${s[2]}</section>`).join("")}
-   <section id="su" class="card"><h2>Sub experiments</h2><p class="muted">Seven guided parts · mark each one complete as you finish it.</p><div class="mg">${e.subExperiments.map((s,i)=>`<a class="box" href="pages/subexperiment.html?experiment=${e.id}&sub=${s.id}"><span class="num">${esc(s.id)}</span><span class="lbl">Part ${String.fromCharCode(65+i)}</span><b>${esc(s.name)}</b><span class="chip ${subDone(s.id)?"green":""}" style="align-self:flex-start;margin-top:4px">${subDone(s.id)?"Completed":"Open lab"}</span></a>`).join("")}</div></section>
+   <section id="su" class="card"><h2>Sub experiments</h2><p class="muted">Seven guided parts · mark each one complete as you finish it.</p><div class="mg">${e.subExperiments.map((s,i)=>`<a class="box" href="subexperiment.html?experiment=${e.id}&sub=${s.id}"><span class="num">${esc(s.id)}</span><span class="lbl">Part ${String.fromCharCode(65+i)}</span><b>${esc(s.name)}</b><span class="chip ${subDone(s.id)?"green":""}" style="align-self:flex-start;margin-top:4px">${subDone(s.id)?"Completed":"Open lab"}</span></a>`).join("")}</div></section>
   </div>
  </div>`;
 }
@@ -354,7 +354,7 @@ function experimentPage(){
 /* ---------------- sub experiment ---------------- */
 function subPage(){
  const e=ALL.find(x=>x.id==q.get("experiment"))||ALL[0],S2=e.subExperiments,i=Math.max(0,S2.findIndex(s=>s.id==q.get("sub"))),s=S2[i]||S2[0],u=j=>`subexperiment.html?experiment=${e.id}&sub=${S2[j].id}`,C=(t,b,id)=>`<section class="card"${id?' id="'+id+'"':""}><h2>${t}</h2>${b}</section>`,done=subDone(s.id);
- return `<a class="btn sm ghost" href="pages/experiment.html?id=${e.id}">← Experiment ${esc(e.id)}</a>
+ return `<a class="btn sm ghost" href="experiment.html?id=${e.id}">← Experiment ${esc(e.id)}</a>
  <div class="detail-head" style="margin-top:14px">
   <div class="chips"><span class="chip">Sub ${esc(s.id)}</span><span class="chip yellow">${esc(s.letter||String.fromCharCode(65+i))}</span><span class="chip plain">Part ${i+1} of ${S2.length}</span><span class="status ${done?"done":"todo"}" data-substatus="${s.id}"><i></i>${done?"Completed":"Not started"}</span></div>
   <h1>${esc(s.name)}</h1><p class="lede muted">${esc(e.name)} · ${expSubject(e)} lab</p>
@@ -646,7 +646,7 @@ function studentPage(){
  return `<div class="stu-hero">
   ${avatar()}
   <div><div class="eyebrow">Student profile · 2026</div><h1>${esc(S.name)}</h1><div class="meta">${esc(S.rollNo)} · ${esc(S.degree)} ${esc(S.department)} · ${esc(S.year)} · Section ${esc(S.section)}</div><div class="tagrow" style="margin-top:10px"><span class="chip">${esc(S.subject)}</span><span class="chip plain">Faculty: ${esc(S.faculty)}</span><span class="chip yellow">${doneMods}/${modules.length} modules complete</span></div></div>
-  <div class="row"><button class="btn" onclick="editP()">${IC.edit} Edit profile</button><button class="btn ghost" onclick="changePic()">Quick photo</button><a class="btn primary" href="pages/about.html">About me <span class="arr">→</span></a></div>
+  <div class="row"><button class="btn" onclick="editP()">${IC.edit} Edit profile</button><button class="btn ghost" onclick="changePic()">Quick photo</button><a class="btn primary" href="about.html">About me <span class="arr">→</span></a></div>
  </div>
  <div class="kpis stagger">
   <div class="kpi reveal"><b>${doneMods}/${modules.length}</b><span>Modules completed</span></div>
@@ -656,8 +656,8 @@ function studentPage(){
  </div>
  <div class="stu-grid">
   <div class="grid" style="gap:16px">
-   <section class="card"><div class="section-head"><div><h2>Module progress</h2><p class="muted">Tick topics inside a module to build this picture.</p></div><a class="link-arrow" href="pages/modules.html">All modules <span>→</span></a></div><div class="p-list">${modules.map(m=>{const pct=modulePct(m);return `<div class="p-row"><span class="pn">0${m.id}</span><div><div class="pt">${esc(m.title)}</div><div class="bar-track" style="margin-top:6px"><i class="bar-fill" style="--w:${pct}%"></i></div></div><span class="ps">${pct}%</span></div>`}).join("")}</div></section>
-   <section class="card"><div class="section-head"><div><h2>Experiment progress</h2><p class="muted">Mark sub-experiments complete as you finish them.</p></div><a class="link-arrow" href="pages/experiments.html">Lab <span>→</span></a></div><div class="p-list">${ALL.map(e=>{const pct=expPct(e);return `<div class="p-row"><span class="pn">${esc(e.id)}</span><div><div class="pt">${esc(e.name)}</div><div class="bar-track" style="margin-top:6px"><i class="bar-fill ${pct>=100?"gold":""}" style="--w:${pct}%"></i></div></div><span class="ps">${pct}%</span></div>`}).join("")}</div></section>
+   <section class="card"><div class="section-head"><div><h2>Module progress</h2><p class="muted">Tick topics inside a module to build this picture.</p></div><a class="link-arrow" href="modules.html">All modules <span>→</span></a></div><div class="p-list">${modules.map(m=>{const pct=modulePct(m);return `<div class="p-row"><span class="pn">0${m.id}</span><div><div class="pt">${esc(m.title)}</div><div class="bar-track" style="margin-top:6px"><i class="bar-fill" style="--w:${pct}%"></i></div></div><span class="ps">${pct}%</span></div>`}).join("")}</div></section>
+   <section class="card"><div class="section-head"><div><h2>Experiment progress</h2><p class="muted">Mark sub-experiments complete as you finish them.</p></div><a class="link-arrow" href="experiments.html">Lab <span>→</span></a></div><div class="p-list">${ALL.map(e=>{const pct=expPct(e);return `<div class="p-row"><span class="pn">${esc(e.id)}</span><div><div class="pt">${esc(e.name)}</div><div class="bar-track" style="margin-top:6px"><i class="bar-fill ${pct>=100?"gold":""}" style="--w:${pct}%"></i></div></div><span class="ps">${pct}%</span></div>`}).join("")}</div></section>
    <section class="card"><div class="section-head"><div><h2>Learning activity</h2><p class="muted">Your latest actions in this browser.</p></div></div>${acts.length?`<div class="tl">${acts.map(a=>`<div class="ev"><b>${esc(a.t)}</b><small>${new Date(a.at).toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</small></div>`).join("")}</div>`:`<div class="empty-state" style="padding:26px"><div class="illus" style="width:64px;height:64px;font-size:24px">✨</div><h3>No activity yet</h3><p>Complete a topic, finish a lab part or save a resource and it will appear here.</p></div>`}</section>
   </div>
   <div class="grid" style="gap:16px">
@@ -668,8 +668,8 @@ function studentPage(){
     <dl><dt>Department</dt><dd>${esc(S.department)}</dd><dt>Section</dt><dd>${esc(S.section)}</dd><dt>Subject</dt><dd>${esc(S.subject)}</dd><dt>Degree</dt><dd>${esc(S.degree)} · ${esc(S.year)}</dd><dt>Faculty</dt><dd>${esc(S.faculty)}<div class="lbl" style="font-size:9px">${esc(S.designation)}</div></dd></dl>
     <div class="row"><button class="btn sm" onclick="editP()">Edit details</button><button class="btn sm" onclick="changePic()">Quick photo</button></div>
    </div>
-   <section class="card"><div class="section-head"><div><h2>Saved resources</h2><p class="muted">${savedRes.length} bookmarked</p></div><a class="link-arrow" href="pages/resources.html">Library <span>→</span></a></div>${savedRes.length?`<div class="p-list">${savedRes.map(r=>`<div class="p-row"><span class="pn">${esc(typeMeta(r.type).k.slice(0,2).toUpperCase())}</span><div><a class="pt" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('No URL');return false"`}>${esc(r.title)}</a><div class="ps">${esc(r.category||"Resource")}</div></div><button class="btn sm" data-key="${esc(rkey(r))}" onclick="toggleSave(this.dataset.key)" aria-label="Remove bookmark">${IC.trash}</button></div>`).join("")}</div>`:`<p class="muted">No saved resources yet. <a href="pages/resources.html" style="color:var(--acc);font-weight:700">Browse the library →</a></p>`}</section>
-   <section class="card"><div class="section-head"><div><h2>Recent projects</h2><p class="muted">From your project studio</p></div><a class="link-arrow" href="pages/projects.html">All <span>→</span></a></div>${ps.length?`<div class="p-list">${ps.slice(0,3).map(p=>`<div class="p-row"><span class="pn">${esc(String(p.title||"P").slice(0,1).toUpperCase())}</span><div><div class="pt">${esc(p.title)}</div><div class="ps">${esc(p.category||"Project")} · ${esc(p.status||"Project")}</div></div><button class="btn sm" onclick="openProject('${esc(p.id)}')">View</button></div>`).join("")}</div>`:`<p class="muted">No projects yet. <a href="pages/projects.html" style="color:var(--acc);font-weight:700">Open the studio →</a></p>`}</section>
+   <section class="card"><div class="section-head"><div><h2>Saved resources</h2><p class="muted">${savedRes.length} bookmarked</p></div><a class="link-arrow" href="resources.html">Library <span>→</span></a></div>${savedRes.length?`<div class="p-list">${savedRes.map(r=>`<div class="p-row"><span class="pn">${esc(typeMeta(r.type).k.slice(0,2).toUpperCase())}</span><div><a class="pt" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('No URL');return false"`}>${esc(r.title)}</a><div class="ps">${esc(r.category||"Resource")}</div></div><button class="btn sm" data-key="${esc(rkey(r))}" onclick="toggleSave(this.dataset.key)" aria-label="Remove bookmark">${IC.trash}</button></div>`).join("")}</div>`:`<p class="muted">No saved resources yet. <a href="resources.html" style="color:var(--acc);font-weight:700">Browse the library →</a></p>`}</section>
+   <section class="card"><div class="section-head"><div><h2>Recent projects</h2><p class="muted">From your project studio</p></div><a class="link-arrow" href="projects.html">All <span>→</span></a></div>${ps.length?`<div class="p-list">${ps.slice(0,3).map(p=>`<div class="p-row"><span class="pn">${esc(String(p.title||"P").slice(0,1).toUpperCase())}</span><div><div class="pt">${esc(p.title)}</div><div class="ps">${esc(p.category||"Project")} · ${esc(p.status||"Project")}</div></div><button class="btn sm" onclick="openProject('${esc(p.id)}')">View</button></div>`).join("")}</div>`:`<p class="muted">No projects yet. <a href="projects.html" style="color:var(--acc);font-weight:700">Open the studio →</a></p>`}</section>
   </div>
  </div>`;
 }
@@ -677,7 +677,7 @@ function studentPage(){
 /* ---------------- about ---------------- */
 function aboutPage(){
  const C=(t,b)=>`<section class="card"><h2>${t}</h2><p>${b}</p></section>`;
- return `<a class="btn sm ghost" href="pages/student.html">← Student dashboard</a>
+ return `<a class="btn sm ghost" href="student.html">← Student dashboard</a>
  <div class="page-head" style="margin-top:14px"><div class="eyebrow">Student profile · 2026</div><h1 class="page-title">About me</h1><p class="lede">Data Science student at Mohan Babu University — learning in public, one experiment at a time.</p></div>
  <div class="about-grid">
   <div class="grid" style="gap:14px">
@@ -688,9 +688,9 @@ function aboutPage(){
    <section class="card"><h2>Technical skills</h2><div class="tagrow" style="margin-top:10px">${["Python","Data Science","SQL","Power BI","Data Analysis","Machine Learning","Pandas","NumPy"].map(s=>`<span class="chip">${s}</span>`).join("")}</div></section>
   </div>
   <div class="grid" style="gap:14px">
-   <section class="card"><div class="row" style="gap:14px">${avatar()}<div><b style="font-family:var(--ff-disp);font-size:16px">${esc(S.name)}</b><div class="lbl">${esc(S.rollNo)}</div><div class="muted" style="margin-top:4px">${esc(S.department)} · Section ${esc(S.section)}</div></div></div><div class="row" style="margin-top:14px"><a class="btn sm" href="pages/student.html">Dashboard</a><button class="btn sm" onclick="editP()">Edit profile</button></div></section>
+   <section class="card"><div class="row" style="gap:14px">${avatar()}<div><b style="font-family:var(--ff-disp);font-size:16px">${esc(S.name)}</b><div class="lbl">${esc(S.rollNo)}</div><div class="muted" style="margin-top:4px">${esc(S.department)} · Section ${esc(S.section)}</div></div></div><div class="row" style="margin-top:14px"><a class="btn sm" href="student.html">Dashboard</a><button class="btn sm" onclick="editP()">Edit profile</button></div></section>
    <section class="card"><h2>Resume</h2><p class="muted">The downloadable resume is part of the static site assets.</p><a class="btn primary block" href="assets/resume/resume.pdf" target="_blank" rel="noopener" onclick="toast('Opening resume (add assets/resume/resume.pdf if missing)')">${IC.book} Download resume</a></section>
-   <section class="card"><h2>Quick links</h2><div class="p-list"><a class="p-row" href="pages/modules.html"><span class="pn">01</span><span class="pt">Learning modules</span><span class="ps">→</span></a><a class="p-row" href="pages/experiments.html"><span class="pn">02</span><span class="pt">Lab experiments</span><span class="ps">→</span></a><a class="p-row" href="pages/resources.html"><span class="pn">03</span><span class="pt">Knowledge hub</span><span class="ps">→</span></a><a class="p-row" href="pages/projects.html"><span class="pn">04</span><span class="pt">Project studio</span><span class="ps">→</span></a></div></section>
+   <section class="card"><h2>Quick links</h2><div class="p-list"><a class="p-row" href="modules.html"><span class="pn">01</span><span class="pt">Learning modules</span><span class="ps">→</span></a><a class="p-row" href="experiments.html"><span class="pn">02</span><span class="pt">Lab experiments</span><span class="ps">→</span></a><a class="p-row" href="resources.html"><span class="pn">03</span><span class="pt">Knowledge hub</span><span class="ps">→</span></a><a class="p-row" href="projects.html"><span class="pn">04</span><span class="pt">Project studio</span><span class="ps">→</span></a></div></section>
   </div>
  </div>`;
 }
@@ -698,7 +698,7 @@ function aboutPage(){
 function footer(){
  return `<footer class="site-foot">
   <div><div class="brandline">Data Science Digital Library</div><p>A student-built learning portal for modules, experiments, tools, resources and projects at Mohan Babu University.</p></div>
-  <nav aria-label="Footer"><a href="index.html">Home</a><a href="pages/modules.html">Modules</a><a href="pages/experiments.html">Experiments</a><a href="pages/tools.html">Tools</a><a href="pages/resources.html">Resources</a><a href="pages/projects.html">Projects</a><a href="pages/student.html">Student</a><a href="pages/about.html">About</a></nav>
+  <nav aria-label="Footer"><a href="index.html">Home</a><a href="modules.html">Modules</a><a href="experiments.html">Experiments</a><a href="tools.html">Tools</a><a href="resources.html">Resources</a><a href="projects.html">Projects</a><a href="student.html">Student</a><a href="about.html">About</a></nav>
   <div class="fine"><span>© 2026 Mohan Babu University · Data Science</span><span>Academic year 2026 · Saved locally in this browser</span></div>
  </footer>`;
 }

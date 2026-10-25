@@ -102,7 +102,7 @@ function modulesPage(){
 
 /* ---------------- module detail ---------------- */
 function modulePage(){
- const m=modules.find(x=>x.id==q.get("id"))||modules[0],pdf=`assets/modules/module-${m.id}.pdf`,pct=modulePct(m);
+ const m=modules.find(x=>x.id==q.get("id"))||modules[0],pdf=`../assets/modules/module-${m.id}.pdf`,pct=modulePct(m);
  return `<a class="btn sm ghost" href="pages/modules.html">← All modules</a>
  <div class="detail-head" style="margin-top:14px">
   <div class="chips"><span class="chip">Module 0${m.id}</span><span class="chip yellow">${MOD_CAT[m.id]||"Core"}</span><span class="chip plain">${m.topics.length} topics</span></div>
