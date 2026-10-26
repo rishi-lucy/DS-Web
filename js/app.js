@@ -23,7 +23,6 @@ function flushSearch(kind){
 const _saved=J("mbu_student",{});
 if(["Manchala Bhargavi","Pujala Geetha Nandini"].includes(_saved.name)||["24102A030088","24102A030099"].includes(_saved.rollNo)){localStorage.removeItem("mbu_student");for(const k in _saved)delete _saved[k]}  /* drop cached profiles from earlier defaults */
 const S=Object.assign({},student,_saved);S.social=Object.assign({},student.social,S.social);
-if(!S.img)S.img=S.profileImage||"assets/images/profile.jpg";
 const ALL=experiments.concat(J("mbu_exps",[]));
 /* custom modules are local to this browser — defaults stay untouched */
 const MOD_STORE="mbu_modules";
@@ -260,20 +259,11 @@ function toggleSub(id,expId,btn){
 }
 
 /* ---------------- profile ---------------- */
-const initials=S.name.split(" ").map(w=>w[0]).join("").slice(0,3);
-const PROFILE_PHOTO="assets/images/profile.jpg";
-function profilePhoto(){
- try{
-  const permanent=localStorage.getItem("mbu_profile_photo");
-  if(permanent)return permanent;
-  const custom=J("mbu_student",{}).img;
-  if(custom){localStorage.setItem("mbu_profile_photo",custom);return custom}
- }catch(e){}
- return PROFILE_PHOTO;
-}
-const avatar=()=>`<button class="avatar" aria-label="View profile picture" onclick="preview()">${imgOr()}</button>`;
-function imgOr(){return `<img src="${esc(profilePhoto())}" alt="Profile photo of ${esc(S.name)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.replaceWith('${initials}')">`}
-function preview(){modal("pv",`<div class="modal-head"><div><div class="eyebrow">Student</div><h2>${esc(S.name)}</h2></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div><div style="text-align:center"><div class="avatar" style="width:min(280px,70vw);height:min(280px,70vw);margin:auto;font-size:60px;cursor:default;overflow:hidden">${imgOr()}</div><p class="muted" style="margin-top:12px">${esc(S.degree)} · ${esc(S.department)} · ${esc(S.year)}</p></div>`)}
+const avatarInitials=esc(S.name.split(" ").map(w=>w[0]).join("").slice(0,3)||"ST");
+const profileImage=student.profileImage||"assets/images/profile.jpg?v=20261026r";
+const avatarFace=()=>`<span class="avatar-initials" aria-hidden="true">${avatarInitials}</span><img src="${esc(profileImage)}" alt="Profile photo of ${esc(S.name)}" width="338" height="356" decoding="async" onerror="this.remove()">`;
+const avatar=()=>`<button class="avatar" aria-label="View profile details" onclick="preview()">${avatarFace()}</button>`;
+function preview(){modal("pv",`<div class="modal-head"><div><div class="eyebrow">Student</div><h2>${esc(S.name)}</h2></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div><div style="text-align:center"><div class="avatar" style="width:min(280px,70vw);height:min(280px,70vw);margin:auto;font-size:60px;cursor:default;overflow:hidden" aria-hidden="true">${avatarFace()}</div><p class="muted" style="margin-top:12px">${esc(S.degree)} · ${esc(S.department)} · ${esc(S.year)}</p></div>`)}
 function profile(){const f=S.social,ic=[
  ["linkedin","LinkedIn",`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4ZM3.3 9.3h3.8v11.4H3.3zM9.2 9.3h3.6v1.6h.1a4 4 0 0 1 3.6-2c3.9 0 4.6 2.5 4.6 5.7v6.1h-3.8v-5.4c0-1.3 0-3-1.9-3s-2.2 1.4-2.2 2.9v5.5H9.2z"/></svg>`],
  ["github","GitHub",`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 1.7 2.63 1.21 3.27.93.1-.72.39-1.21.71-1.49-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.08 1.14a10.7 10.7 0 0 1 5.6 0c2.14-1.44 3.08-1.14 3.08-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.25-5.1 5.53.4.35.75 1.03.75 2.08v3.05c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .9Z"/></svg>`],
@@ -976,7 +966,7 @@ function studentPage(){
    <div class="card idc">
     <div class="row sp"><span class="lbl">Student ID · 2026</span></div>
     <hr style="margin:14px 0">
-    <div class="row" style="gap:14px"><div class="avatar" style="width:78px;height:78px;overflow:hidden" onclick="preview()" role="button" tabindex="0">${imgOr()}</div><div><b style="font-family:var(--ff-disp);font-size:15px">${esc(S.name)}</b><div class="lbl" style="font-size:9px">${esc(S.rollNo)}</div></div></div>
+    <div class="row" style="gap:14px"><div class="avatar" style="width:78px;height:78px;overflow:hidden" onclick="preview()" role="button" tabindex="0">${avatarFace()}</div><div><b style="font-family:var(--ff-disp);font-size:15px">${esc(S.name)}</b><div class="lbl" style="font-size:9px">${esc(S.rollNo)}</div></div></div>
     <dl><dt>Department</dt><dd>${esc(S.department)}</dd><dt>Section</dt><dd>${esc(S.section)}</dd><dt>Subject</dt><dd>${esc(S.subject)}</dd><dt>Degree</dt><dd>${esc(S.degree)} · ${esc(S.year)}</dd><dt>Faculty</dt><dd>${esc(S.faculty)}<div class="lbl" style="font-size:9px">${esc(S.designation)}</div></dd></dl>
     <div class="row"><button class="btn sm" onclick="editP()">Edit details</button></div>
    </div>

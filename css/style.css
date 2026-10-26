@@ -19,7 +19,7 @@ a.card:hover{border-color:var(--acc);transform:translateY(-3px)}.card:before{con
 .hero{background-image:radial-gradient(var(--bd) 1px,transparent 1px);background-size:16px 16px;padding:10px 0}
 .tiles{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.tile{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--bd);border-radius:10px;font-weight:800;color:var(--pri);transition:.2s}.tile:hover{transform:translateY(-4px);border-color:var(--acc)}
 .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.avatar{width:76px;height:92px;flex-shrink:0;border-radius:12px;background:var(--pri);color:var(--bg);display:grid;place-items:center;font-weight:800;cursor:pointer;transition:.3s;border:0}.avatar:hover{transform:scale(1.08)}
+.avatar{width:76px;height:92px;flex-shrink:0;border-radius:12px;background:var(--pri);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:22px;letter-spacing:.04em;cursor:pointer;transition:.3s;border:0;position:relative}.avatar:hover{transform:scale(1.08)}
 dl{margin:12px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px}dt{color:var(--mu)}dd{margin:0;font-weight:700}
 .soc{display:flex;gap:6px;flex-wrap:wrap}.soc a{width:30px;height:30px;border-radius:50%;border:1px solid var(--bd);display:grid;place-items:center;font-size:11px;transition:.2s}.soc a:hover{background:var(--acc);color:#fff;transform:translateY(-2px)}
 .modal{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:9;padding:12px}.modal.open{display:grid;animation:in .25s}.modal>div{background:var(--card);border-radius:14px;padding:20px;max-width:440px;width:100%;max-height:90vh;overflow:auto}
@@ -199,8 +199,9 @@ textarea{padding:12px}
  .compiler-code{min-height:210px}.flipbook{padding:12px 8px;margin:18px auto}.flipbook .row{gap:5px}.flipbook .row .btn{padding:6px 8px}
 }
 
-/* Student profile photo and social brand icons */
+/* Student profile avatar and social brand icons */
 .avatar{overflow:hidden;padding:0;}
+.avatar .avatar-initials{position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;}
+.avatar img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;z-index:1}
 .soc.social-brand a.brand-icon{width:36px;height:36px;border-radius:10px;}
 .soc.social-brand a.brand-icon svg{width:19px;height:19px;display:block;}
-.avatar img{display:block;}

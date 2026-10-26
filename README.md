@@ -21,7 +21,7 @@ Open <http://127.0.0.1:8090>. The old Flask application and its SQLite database 
 - **Tools and resources** — searchable toolkit and knowledge hub with saved bookmarks.
 - **Projects** — project cards with a **Watch on YouTube** action that uses a saved project URL or a title/stack search.
 - **AI Study Assistant** — a local, browser-only study guide grounded in this portal's modules, labs, tools and resources. It is not a live AI service.
-- **Student profile** — personal details, custom profile photo and module/experiment progress.
+- **Student profile** — personal details, portrait and module/experiment progress.
 - **Light/dark theme** — sky-blue light palette and navy dark palette, restored before paint and persisted in `localStorage`.
 
 ## Browser storage keys
@@ -30,7 +30,6 @@ Open <http://127.0.0.1:8090>. The old Flask application and its SQLite database 
 | --- | --- |
 | `mbu_theme` | `light` or `dark` |
 | `mbu_student` | Student profile details |
-| `mbu_profile_photo` | Preserved custom profile image |
 | `mbu_progress` | Module, lab and study progress |
 | `mbu_resources` | User-added resources |
 | `mbu_saved_res` | Saved resource bookmarks |
@@ -52,7 +51,6 @@ js/
   data.js, app.js, config.js, code-samples.js, lab3d.js, premium.js
 assets/
   images/, modules/
-pages/            Legacy page shells (redirected link base to the root site)
 ```
 
 ## Important limitations
@@ -62,7 +60,7 @@ pages/            Legacy page shells (redirected link base to the root site)
 - The live code playground uses public execution services and Pyodide; an internet connection may be required. Configure endpoints in `js/config.js`.
 - The PDF flip-book uses PDF.js from a CDN and needs internet access the first time.
 - The Study Assistant is a deterministic local guide, not an LLM. To connect a real service, add a server endpoint and replace the local `assistantAnswer()` call in `js/app.js`; keep any API key on the server.
-- `pages/*.html` are legacy alternate shells. They use `<base href="../">` so shared navigation returns to the root site.
+- The student portrait is a repository asset (`assets/images/profile.jpg`) and is served with the site, so it remains available after deployment. If the image cannot load, the avatar falls back to initials.
 
 ## Content and privacy
 

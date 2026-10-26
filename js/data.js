@@ -20,7 +20,7 @@ const student = {
   university: "Mohan Babu University",
   degree: "B.Tech",
   year: "3rd Year",
-  profileImage: "assets/images/profile.jpg",
+  profileImage: "assets/images/profile.jpg?v=20261026r",
   social: {
     website: "",
     linkedin: "",
