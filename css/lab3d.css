@@ -1,7 +1,7 @@
 /* ===== Lab3D theme — layered on top of style.css ===== */
 :root{--bg:#eef0fb;--card:rgba(255,255,255,.78);--pri:#16193a;--acc:#6c4cff;--acc2:#00b3a4;--tx:#1b1e3a;--mu:#5b6080;--bd:rgba(90,100,170,.28);--paper:#fffdf7;--sh:rgba(40,30,110,.38)}
 [data-theme=dark]{--bg:#0c0e1d;--card:rgba(28,33,66,.72);--pri:#eef0ff;--acc:#9a85ff;--acc2:#2de2d0;--tx:#e6e9ff;--mu:#9aa1c8;--bd:rgba(140,150,255,.24);--paper:#1d2233;--sh:rgba(0,0,0,.65)}
-body{background:radial-gradient(1100px 600px at 12% -10%,color-mix(in srgb,var(--acc) 20%,transparent),transparent),radial-gradient(900px 520px at 100% 8%,color-mix(in srgb,var(--acc2) 16%,transparent),transparent),var(--bg);background-attachment:fixed;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(1100px 600px at 12% -10%,color-mix(in srgb,var(--acc) 20%,transparent),transparent),radial-gradient(900px 520px at 100% 8%,color-mix(in srgb,var(--acc2) 16%,transparent),transparent),var(--bg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
 #app{background:transparent}
 h1{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 14px 28px color-mix(in srgb,var(--acc) 30%,transparent)}
 .hero{background-image:none}
@@ -12,7 +12,7 @@ h1{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-c
 .btn.primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 5px 0 color-mix(in srgb,var(--acc) 55%,#000),0 14px 24px -10px var(--acc)}
 .btn[disabled]{opacity:.6;cursor:wait}
 /* glass cards with depth */
-.card{border-radius:18px;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--bd);box-shadow:0 24px 40px -26px var(--sh);transform-style:preserve-3d;transition:transform .14s ease-out,box-shadow .25s,border-color .25s}
+.card{border-radius:18px;background:var(--card);border:1px solid var(--bd);box-shadow:0 24px 40px -26px var(--sh);transform-style:preserve-3d;transition:transform .14s ease-out,box-shadow .25s,border-color .25s}
 a.card:hover,.box:hover{box-shadow:0 34px 54px -24px var(--sh)}
 .box .num,.tile{text-shadow:0 8px 14px color-mix(in srgb,var(--acc) 35%,transparent)}
 .tile{background:var(--card);box-shadow:0 4px 0 var(--bd)}

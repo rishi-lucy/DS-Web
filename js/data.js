@@ -30,7 +30,7 @@ const student = {
 };
 
 /* ---------------------------------------------------------------- modules */
-const modules = [
+let modules = [
   {
     id: "1",
     title: "Foundations of Data Science",

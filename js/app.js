@@ -6,12 +6,43 @@
 const $=s=>document.querySelector(s),q=new URLSearchParams(location.search),page=document.body.dataset.page;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const J=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}};
+/* Keystroke-driven grids render once the typist pauses, not on every key. */
+const SEARCH_TIMERS=Object.create(null);
+const SEARCH_RUNNERS={portal:()=>gsearch(),modules:()=>renderModules(),experiments:()=>filt(),tools:()=>renderTools(),resources:()=>renderResources(),projects:()=>renderProjects()};
+function queueSearch(kind){
+ const run=SEARCH_RUNNERS[kind];if(!run)return;
+ clearTimeout(SEARCH_TIMERS[kind]);
+ SEARCH_TIMERS[kind]=setTimeout(()=>{delete SEARCH_TIMERS[kind];run()},120);
+}
+function flushSearch(kind){
+ if(!SEARCH_TIMERS[kind])return;
+ clearTimeout(SEARCH_TIMERS[kind]);delete SEARCH_TIMERS[kind];
+ const run=SEARCH_RUNNERS[kind];if(run)run();
+}
 (()=>{try{const o=J("mbu_student",{});if(o.name==="Manchala Bhargavi"){o.name=student.name;localStorage.setItem("mbu_student",JSON.stringify(o))}}catch(e){}})(); /* replaces a previously saved old name */
 const _saved=J("mbu_student",{});
 if(["Manchala Bhargavi","Pujala Geetha Nandini"].includes(_saved.name)||["24102A030088","24102A030099"].includes(_saved.rollNo)){localStorage.removeItem("mbu_student");for(const k in _saved)delete _saved[k]}  /* drop cached profiles from earlier defaults */
 const S=Object.assign({},student,_saved);S.social=Object.assign({},student.social,S.social);
 if(!S.img)S.img=S.profileImage||"assets/images/profile.jpg";
 const ALL=experiments.concat(J("mbu_exps",[]));
+/* custom modules are local to this browser — defaults stay untouched */
+const MOD_STORE="mbu_modules";
+try{
+ const extra=J(MOD_STORE,[]);
+ if(Array.isArray(extra)&&extra.length)modules=modules.concat(extra.filter(m=>m&&m.title).map(m=>({
+  ...m,
+  id:String(m.id||("c"+(Date.now().toString(36)))),
+  custom:true,
+  description:m.description||"Custom module",
+  overview:m.overview||m.description||"",
+  topics:Array.isArray(m.topics)?m.topics:[],
+  objectives:Array.isArray(m.objectives)?m.objectives:[],
+  applications:Array.isArray(m.applications)?m.applications:[],
+  resources:Array.isArray(m.resources)?m.resources:[],
+  takeaways:Array.isArray(m.takeaways)?m.takeaways:[],
+  material:m.material||""
+ })));
+}catch(e){}
 document.documentElement.dataset.theme=localStorage.getItem("mbu_theme")||"light";
 const link=u=>/^https?:/.test(u)?`href="${esc(u)}" target="_blank" rel="noopener"`:`href="#" onclick="toast('Social link is not configured');return false"`;
 
@@ -40,11 +71,47 @@ const IC={
  clock:svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
  spark:svg('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>'),
  eye:svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>'),
- edit:svg('<path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>')
+ edit:svg('<path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>'),
+ mic:svg('<path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M8 21h8"/>')
 };
 
 /* ---------------- ui helpers ---------------- */
-function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.setAttribute("role","status");d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2400)}
+function toast(t,type){
+ document.querySelectorAll(".toast").forEach(x=>x.remove());
+ const text=String(t??"");
+ const kind=type||(/error|could not|couldn.t|required|too large|out of storage|unavailable|failed|invalid|blocked|not supported|cannot/i.test(text)?"error":/saved|complete|cleared|removed|added|marked|copied|sent|ready|listening|question added/i.test(text)?"success":"");
+ const d=document.createElement("div");
+ d.className="toast"+(kind?" "+kind:"");
+ d.setAttribute("role",kind==="error"?"alert":"status");
+ d.textContent=text;
+ document.body.append(d);
+ setTimeout(()=>d.remove(),kind==="error"?3600:2400);
+}
+function btnBusy(btn,label){
+ if(!btn||btn.dataset.busy==="1")return;
+ btn.dataset.busy="1";
+ btn.dataset.idleHtml=btn.innerHTML;
+ btn.disabled=true;
+ btn.classList.add("is-loading");
+ btn.setAttribute("aria-busy","true");
+ btn.innerHTML=`<span class="spinner" aria-hidden="true"></span><span>${esc(label||"Working…")}</span>`;
+}
+function btnIdle(btn){
+ if(!btn)return;
+ const idle=btn.dataset.idleHtml;
+ btn.disabled=false;
+ btn.classList.remove("is-loading");
+ btn.removeAttribute("aria-busy");
+ if(idle){btn.innerHTML=idle;delete btn.dataset.idleHtml}
+ delete btn.dataset.busy;
+}
+function btnFeedback(btn,kind,label){
+ if(!btn)return;
+ btn.classList.remove("is-loading");
+ btn.classList.add(kind==="error"?"is-error":"is-success");
+ btn.innerHTML=`<span aria-hidden="true">${kind==="error"?"!":"✓"}</span><span>${esc(label)}</span>`;
+ setTimeout(()=>btnIdle(btn),1400);
+}
 function modal(id,html){
  let m=$("#"+id);
  if(!m){m=document.createElement("div");m.id=id;m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.onclick=e=>{if(e.target===m)m.classList.remove("open")};document.body.append(m)}
@@ -52,12 +119,33 @@ function modal(id,html){
  setTimeout(()=>{const f=m.querySelector("input:not([type=hidden]),textarea,select");if(f)f.focus()},90);
  return m;
 }
-document.addEventListener("keydown",e=>{if(e.key=="Escape")document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"))});
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));
+ const nav=$("#tn"),burger=$(".burger");
+ if(nav&&nav.classList.contains("open")){nav.classList.remove("open");if(burger){burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Open menu");burger.classList.remove("is-open")}}
+ dockClose();
+});
+document.addEventListener("click",e=>{
+ const nav=$("#tn"),burger=$(".burger");
+ if(!nav||!nav.classList.contains("open"))return;
+ const el=e.target instanceof Element?e.target:null;
+ if(!el||el.closest("#tn")||el.closest(".burger"))return;
+ nav.classList.remove("open");
+ if(burger){burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Open menu");burger.classList.remove("is-open")}
+});
+window.addEventListener("resize",()=>{
+ if(window.innerWidth<=1200)return;
+ const nav=$("#tn"),burger=$(".burger");
+ if(!nav||!nav.classList.contains("open"))return;
+ nav.classList.remove("open");
+ if(burger){burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Open menu");burger.classList.remove("is-open")}
+});
 function theme(){
  const root=document.documentElement,t=root.dataset.theme==="dark"?"light":"dark";
  root.classList.add("theming");root.dataset.theme=t;localStorage.setItem("mbu_theme",t);
  document.querySelectorAll(".theme-toggle").forEach(b=>{b.setAttribute("aria-pressed",t==="dark"?"true":"false");b.setAttribute("aria-label",t==="dark"?"Switch to light mode":"Switch to dark mode")});
- const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",t==="dark"?"#0B1220":"#F5F7FB");
+ const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",t==="dark"?"#0B1728":"#82BFF0");
  setTimeout(()=>root.classList.remove("theming"),430);
 }
 
@@ -71,6 +159,76 @@ function subDone(id){return prog().subs.includes(id)}
 function expPct(e){const done=e.subExperiments.filter(s=>subDone(s.id)).length;return Math.round(done/(e.subExperiments.length||1)*100)}
 function logAct(txt){const a=J(AKEY,[]);a.unshift({t:txt,at:Date.now()});localStorage.setItem(AKEY,JSON.stringify(a.slice(0,10)))}
 function act(){return J(AKEY,[])}
+function studyStreak(){
+ const days=new Set(act().map(a=>{try{return new Date(a.at).toDateString()}catch{return ""}}).filter(Boolean));
+ if(!days.size)return 0;
+ let n=0;
+ for(let i=0;i<365;i++){
+  const d=new Date();d.setDate(d.getDate()-i);
+  if(days.has(d.toDateString()))n++;
+  else if(i>0)break;
+ }
+ return n;
+}
+function performanceStats(){
+ const p=prog(),topics=modules.reduce((a,m)=>a+m.topics.length,0);
+ const topicsDone=modules.reduce((a,m)=>a+(p.topics[m.id]||[]).length,0);
+ const labs=ALL.reduce((a,e)=>a+e.subExperiments.length,0),labsDone=p.subs.length;
+ const mods=modules.filter(m=>modulePct(m)>=100).length;
+ const pct=Math.round(((topicsDone+labsDone)/(topics+labs||1))*100);
+ return {pct,topics,topicsDone,labs,labsDone,mods,modules:modules.length,streak:studyStreak()};
+}
+function weeklyActivity(){
+ const days=[];
+ for(let i=6;i>=0;i--){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);
+  days.push({key:d.toDateString(),label:d.toLocaleDateString(undefined,{weekday:"short"}).slice(0,2),date:d.getDate(),count:0});
+ }
+ const map=Object.fromEntries(days.map(d=>[d.key,d]));
+ act().forEach(a=>{try{const k=new Date(a.at).toDateString();if(map[k])map[k].count++}catch(e){}});
+ return days;
+}
+function dashActivityChart(){
+ const days=weeklyActivity(),total=days.reduce((a,d)=>a+d.count,0);
+ if(!total)return `<div class="dash-empty"><span class="dash-empty-orb">${IC.clock}</span><div><b>No study activity yet</b><p>Complete a topic, finish a lab part or save a resource to start your weekly chart.</p></div></div>`;
+ const max=Math.max(...days.map(d=>d.count),1);
+ return `<div class="chart-wrap">
+  <div class="chart-bars" role="img" aria-label="Study actions over the last seven days: ${days.map(d=>d.label+" "+d.count).join(", ")}">
+   ${days.map((d,i)=>`<div class="chart-bar" style="--i:${i}" title="${d.count} ${d.count===1?"action":"actions"} on ${d.label} ${d.date}"><i class="${d.count?"":"zero"}" style="--h:${Math.round(d.count/max*100)}%"></i></div>`).join("")}
+  </div>
+  <div class="chart-labels" aria-hidden="true">${days.map(d=>`<span>${esc(d.label)}<small>${d.date}</small></span>`).join("")}</div>
+ </div>
+ <div class="chart-foot"><span>${total} tracked action${total===1?"":"s"} this week</span><span>Last 7 days</span></div>`;
+}
+function dashCategoryCards(st,savedRes){
+ const modPct=Math.round(modules.reduce((a,m)=>a+modulePct(m),0)/(modules.length||1));
+ const subPct=Math.round(st.labsDone/(st.labs||1)*100);
+ const resPct=Math.round(savedRes.length/(resources().length||1)*100);
+ const streakPct=Math.min(100,Math.round(st.streak/7*100));
+ const items=[
+  {href:"modules.html",label:"Modules",value:`${st.mods} / ${st.modules}`,pct:modPct,icon:IC.modules},
+  {href:"experiments.html",label:"Lab parts",value:`${st.labsDone} / ${st.labs}`,pct:subPct,icon:IC.experiments},
+  {href:"resources.html",label:"Saved",value:`${savedRes.length} / ${resources().length}`,pct:resPct,icon:IC.star},
+  {href:"student.html",label:"Streak",value:st.streak?`${st.streak} day${st.streak===1?"":"s"}`:"Start today",pct:streakPct,icon:IC.clock}
+ ];
+ return `<div class="dash-cats">${items.map((x,i)=>`<a class="dash-cat" href="${x.href}" style="--i:${i}"><span class="dash-cat-ico">${x.icon}</span><span class="dash-cat-copy"><small>${esc(x.label)}</small><b>${esc(x.value)}</b></span><span class="dash-cat-pct">${Math.max(0,Math.min(100,x.pct))}%</span><span class="bar-track"><i class="bar-fill" style="--w:${Math.max(0,Math.min(100,x.pct))}%"></i></span></a>`).join("")}</div>`;
+}
+function dashDetails(st,savedRes){
+ const rows=[
+  ["Topics completed",`${st.topicsDone} / ${st.topics}`,IC.modules],
+  ["Lab parts completed",`${st.labsDone} / ${st.labs}`,IC.experiments],
+  ["Modules finished",`${st.mods} / ${st.modules}`,IC.check],
+  ["Resources saved",`${savedRes.length} / ${resources().length}`,IC.star]
+ ];
+ return `<details class="dash-details"><summary><span>${IC.eye} Detailed breakdown</span><span class="chev" aria-hidden="true">⌄</span></summary><div class="dash-detail-grid">${rows.map(r=>`<div><span>${r[2]} ${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div></details>`;
+}
+function dashRecommendations(savedRes){
+ const saved=new Set(savedRes.map(r=>rkey(r)));
+ const rec=resources().filter(r=>!saved.has(rkey(r))).slice(0,3);
+ if(!rec.length)return `<p class="muted" style="margin:0">Every resource is already in your saved list. <a href="resources.html" style="color:var(--acc);font-weight:700">Browse the library →</a></p>`;
+ return `<div class="rec-list">${rec.map(r=>{const m=typeMeta(r.type),href=r.url||"resources.html",ext=!!r.url;return `<div class="rec-item"><span class="rec-badge">${m.icon}</span><div><a class="pt" href="${esc(href)}"${ext?' target="_blank" rel="noopener"':""}>${esc(r.title)}</a><span class="ps">${esc(r.category||"Resource")} · ${esc(m.label)}</span></div><button class="icon-btn rec-save" data-key="${esc(rkey(r))}" onclick="toggleSave(this.dataset.key)" aria-label="Save ${esc(r.title)}" title="Save resource">${IC.star}</button></div>`}).join("")}</div>
+ <a class="btn ghost block" style="margin-top:10px" href="resources.html">Explore all resources ${IC.arrow}</a>`;
+}
 function toggleTopic(mid,i,btn){
  const p=prog(),arr=p.topics[mid]||[],at=arr.indexOf(i);
  if(at>=0)arr.splice(at,1);else arr.push(i);
@@ -103,8 +261,18 @@ function toggleSub(id,expId,btn){
 
 /* ---------------- profile ---------------- */
 const initials=S.name.split(" ").map(w=>w[0]).join("").slice(0,3);
+const PROFILE_PHOTO="assets/images/profile.jpg";
+function profilePhoto(){
+ try{
+  const permanent=localStorage.getItem("mbu_profile_photo");
+  if(permanent)return permanent;
+  const custom=J("mbu_student",{}).img;
+  if(custom){localStorage.setItem("mbu_profile_photo",custom);return custom}
+ }catch(e){}
+ return PROFILE_PHOTO;
+}
 const avatar=()=>`<button class="avatar" aria-label="View profile picture" onclick="preview()">${imgOr()}</button>`;
-function imgOr(){return `<img src="${esc(S.img||"assets/images/profile.jpg")}" alt="Profile photo of ${esc(S.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.replaceWith('${initials}')">`}
+function imgOr(){return `<img src="${esc(profilePhoto())}" alt="Profile photo of ${esc(S.name)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.replaceWith('${initials}')">`}
 function preview(){modal("pv",`<div class="modal-head"><div><div class="eyebrow">Student</div><h2>${esc(S.name)}</h2></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div><div style="text-align:center"><div class="avatar" style="width:min(280px,70vw);height:min(280px,70vw);margin:auto;font-size:60px;cursor:default;overflow:hidden">${imgOr()}</div><p class="muted" style="margin-top:12px">${esc(S.degree)} · ${esc(S.department)} · ${esc(S.year)}</p></div>`)}
 function profile(){const f=S.social,ic=[
  ["linkedin","LinkedIn",`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4ZM3.3 9.3h3.8v11.4H3.3zM9.2 9.3h3.6v1.6h.1a4 4 0 0 1 3.6-2c3.9 0 4.6 2.5 4.6 5.7v6.1h-3.8v-5.4c0-1.3 0-3-1.9-3s-2.2 1.4-2.2 2.9v5.5H9.2z"/></svg>`],
@@ -118,37 +286,34 @@ return `<aside class="card">
  <div class="row" style="margin-top:12px"><a class="btn" href="student.html">ID Card</a><button class="btn" onclick="editP()">Edit profile</button></div>
 </aside>`}
 
-let _newPhoto=null,_photoRemoved=false;
-function shrink(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const M=640;let w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(w>M||h>M){const s=Math.min(M/w,M/h);w=Math.round(w*s);h=Math.round(h*s)}const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,w,h);g.drawImage(im,0,0,w,h);cb(c.toDataURL("image/jpeg",.85))};im.onerror=()=>cb(r.result);im.src=r.result};r.onerror=()=>toast("Could not read that image");r.readAsDataURL(file)}
-function pickPhoto(inp){const f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){toast("Please choose an image file");inp.value="";return}if(f.size>8e6){toast("Image too large (max 8 MB)");inp.value="";return}
-shrink(f,url=>{_newPhoto=url;_photoRemoved=false;const p=$("#e_prev");if(p)p.innerHTML=`<img src="${esc(url)}" alt="New profile photo preview" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;const h=$("#e_hint");if(h)h.textContent="New photo ready — press Save Changes"})}
-function dropPhoto(){_newPhoto=null;_photoRemoved=true;const p=$("#e_prev");if(p)p.innerHTML=`<img src="${esc(student.profileImage||"assets/images/profile.jpg")}" alt="Default profile photo" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;const h=$("#e_hint");if(h)h.textContent="Default photo will be restored on save";const inp=$("#e_img");if(inp)inp.value=""}
-function editP(){_newPhoto=null;_photoRemoved=false;const F=[["name","Name"],["rollNo","Roll Number"],["department","Department"],["section","Section"],["subject","Subject"],["faculty","Faculty Name"],["designation","Faculty designation"],["degree","Degree"],["year","Year"]];
-modal("ed",`<div class="modal-head"><div><div class="eyebrow">Profile / 2026</div><h2>Edit details &amp; photo</h2><p class="muted">Changes are saved in this browser.</p></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div>
-<div class="row" style="gap:14px;align-items:center;margin-bottom:14px"><div class="avatar" id="e_prev" style="width:84px;height:84px;cursor:default;overflow:hidden;padding:0">${imgOr()}</div><div><label class="btn" for="e_img" style="display:inline-block;cursor:pointer">Choose photo</label><input id="e_img" type="file" accept="image/*" hidden onchange="pickPhoto(this)"><button class="btn" type="button" onclick="dropPhoto()">Remove photo</button><div class="lbl" id="e_hint" style="margin-top:6px">JPG or PNG · resized automatically</div></div></div>
+function editP(){const F=[["name","Name"],["rollNo","Roll Number"],["department","Department"],["section","Section"],["subject","Subject"],["faculty","Faculty Name"],["designation","Faculty designation"],["degree","Degree"],["year","Year"]];
+modal("ed",`<div class="modal-head"><div><div class="eyebrow">Profile / 2026</div><h2>Edit details</h2><p class="muted">Changes are saved in this browser.</p></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div>
 <div class="form">${F.map(f=>`<div class="field"><label for="e_${f[0]}">${f[1]}</label><input id="e_${f[0]}" value="${esc(S[f[0]])}"></div>`).join("")}</div>
 <div class="row end" style="margin-top:8px"><button class="btn" onclick="this.closest('.modal').classList.remove('open')">Cancel</button><button class="btn primary" onclick="saveP()">Save changes</button></div>`)}
 function saveP(){const v=k=>{const e=$("#e_"+k);return e?e.value.trim():""};const o=J("mbu_student",{});
 ["name","rollNo","department","section","subject","faculty","designation","degree","year"].forEach(k=>o[k]=v(k));
 if(!o.name)return toast("Name is required");if(!o.rollNo)return toast("Roll number is required");
-if(_photoRemoved)delete o.img;else if(_newPhoto)o.img=_newPhoto;
-try{localStorage.setItem("mbu_student",JSON.stringify(o))}catch(e){return toast("Could not save — photo is too large")}
-_newPhoto=null;_photoRemoved=false;location.reload()}
-function changePic(){const f=document.createElement("input");f.type="file";f.accept="image/*";f.onchange=()=>{const x=f.files[0];if(!x)return;if(!/^image\//.test(x.type))return toast("Please choose an image file");if(x.size>8e6)return toast("Image too large (max 8 MB)");shrink(x,url=>{const o=J("mbu_student",{});o.img=url;try{localStorage.setItem("mbu_student",JSON.stringify(o))}catch(e){return toast("Could not save image")}location.reload()})};f.click()}
+localStorage.setItem("mbu_student",JSON.stringify(o));
+location.reload()}
 
 /* ---------------- navigation ---------------- */
+function toggleNav(btn){
+ const nav=$("#tn");if(!nav)return;
+ const open=nav.classList.toggle("open");
+ if(btn){btn.setAttribute("aria-expanded",open?"true":"false");btn.setAttribute("aria-label",open?"Close menu":"Open menu");btn.classList.toggle("is-open",open)}
+}
 function head(){
- const items=[["index.html","Home","home",IC.home],["modules.html","Modules","modules",IC.modules],["experiments.html","Experiments","experiments",IC.experiments],["tools.html","Tools","tools",IC.tools],["resources.html","Resources","resources",IC.resources],["projects.html","Projects","projects",IC.projects],["student.html","Student","student",IC.student]];
+ const items=[["index.html","Home","home",IC.home],["modules.html","Modules","modules",IC.modules],["experiments.html","Experiments","experiments",IC.experiments],["tools.html","Tools","tools",IC.tools],["resources.html","Resources","resources",IC.resources],["assistant.html","Assistant","assistant",IC.spark],["projects.html","Projects","projects",IC.projects],["student.html","Student","student",IC.student]];
  const on=x=>x[2]===page||(page==="module"&&x[2]==="modules")||(/experiment|sub/.test(page)&&x[2]==="experiments")||(page==="about"&&x[2]==="student");
  const dark=document.documentElement.dataset.theme==="dark";
  return `<a class="skip-link" href="#main">Skip to content</a>
  <div class="bar">
   <a class="logo" href="index.html" aria-label="Data Science Portal — home"><span class="logo-txt"><b>Digital Library</b><small>Data Science · MBU</small></span></a>
   <header><nav class="top nav" id="tn" aria-label="Main">
-   <button class="burger" aria-expanded="false" aria-label="Open menu" onclick="const t=$('#tn');t.classList.toggle('open');this.setAttribute('aria-expanded',t.classList.contains('open'))">${IC.menu}<span>Menu</span></button>
    ${items.map(x=>`<a href="${x[0]}" ${on(x)?'class="on" aria-current="page"':""}>${x[3]}<span>${x[1]}</span></a>`).join("")}
    <button class="theme-toggle" onclick="theme()" aria-label="${dark?"Switch to light mode":"Switch to dark mode"}" aria-pressed="${dark?"true":"false"}" title="Light / dark mode"><span class="tt-track"><span class="tt-sun">☀</span><span class="tt-moon">☾</span><span class="tt-knob"></span></span></button>
   </nav></header>
+  <button class="burger" aria-expanded="false" aria-controls="tn" aria-label="Open menu" onclick="toggleNav(this)">${IC.menu}<span>Menu</span></button>
  </div>`;
 }
 
@@ -164,6 +329,14 @@ const LEVELS=["Beginner","Intermediate","Advanced"];
 function statusPill(pct){const cls=pct>=100?"done":pct>0?"live":"todo";return `<span class="status ${cls}"><i></i>${pct>=100?"Completed":pct>0?"In progress":"Not started"}</span>`}
 function statCard(v,label,href){return `<div class="stat reveal"><b data-count="${v}">${v}</b><span>${label}</span><a href="${href}" aria-label="${label}"></a></div>`}
 function modProg(m){const pct=modulePct(m),done=(prog().topics[m.id]||[]).length;return `<div class="prog"><div class="prog-head"><span>Learning progress</span><span><b data-modpct="${m.id}">${pct}%</b> · <span data-modcount="${m.id}">${done}/${m.topics.length}</span> topics</span></div><div class="bar-track"><i class="bar-fill" data-modbar="${m.id}" style="--w:${pct}%"></i></div></div>`}
+function swapCards(el){
+ if(!el)return;
+ if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ el.classList.remove("swap");
+ void el.offsetWidth;
+ el.classList.add("swap");
+ setTimeout(()=>el.classList.remove("swap"),460);
+}
 
 /* ---------------- home ---------------- */
 function home(){
@@ -174,8 +347,8 @@ function home(){
   <div class="eyebrow"><span class="dot"></span>B.Tech Data Science · Academic year 2026</div>
   <h1>Learn Smarter.<br>Build Bigger.<br><span class="grad-text">Explore More.</span></h1>
   <p class="hero-sub">Your all-in-one destination for data science modules, experiments, developer tools, learning resources, and student projects.</p>
-  <div class="hero-cta"><a class="btn primary lg ph" href="resources.html">Explore Resources <span class="arr">→</span></a><a class="btn ghost lg" href="projects.html">View Projects <span class="arr">→</span></a></div>
-  <div class="search-wrap hero-search">${IC.search}<input id="gs" placeholder="Search modules, experiments, topics…" aria-label="Search the portal" autocomplete="off" oninput="gsearch()" onkeydown="if(event.key==='Enter'){const a=$('#gr a');if(a)location.href=a.getAttribute('href')}"><kbd>/</kbd></div>
+  <div class="hero-cta"><a class="btn primary lg ph" href="resources.html">Explore Resources <span class="arr">→</span></a><a class="btn ghost lg" href="projects.html">View Projects <span class="arr">→</span></a><a class="btn ghost lg" href="assistant.html">${IC.spark} Ask the Assistant</a></div>
+  <div class="search-wrap hero-search">${IC.search}<input id="gs" placeholder="Search modules, experiments, topics…" aria-label="Search the portal" autocomplete="off" oninput="queueSearch('portal')" onkeydown="if(event.key==='Enter'){flushSearch('portal');const a=$('#gr a');if(a)location.href=a.getAttribute('href')}"><kbd>/</kbd></div>
   <div id="gr" class="search-pop" aria-live="polite"></div>
   <div class="tagrow" style="margin-top:16px"><span class="chip">${modules.length} modules</span><span class="chip yellow">${ALL.length} experiments</span><span class="chip plain">${subs} sub-experiments</span><span class="chip plain">${tools.length} tools</span></div>
  </div>
@@ -196,6 +369,12 @@ df = pd.<span class="fn">read_csv</span>(<span class="st">"data.csv"</span>)
  ${statCard(modules.length,"Modules","modules.html")}
  ${statCard(ALL.length,"Experiments","experiments.html")}
  ${statCard(ps.length,"Projects","projects.html")}
+</section>
+
+<section class="assistant-banner card reveal">
+ <span class="assistant-banner-orb">${IC.spark}</span>
+ <div><div class="eyebrow">Study support · local guide</div><h2>Stuck on a topic? Ask the Study Assistant</h2><p>Get a short explanation, a revision plan, or links straight into the right module, lab or resource. Answers are grounded in this portal — no message leaves your browser.</p></div>
+ <a class="btn primary" href="assistant.html">Start a conversation <span class="arr">→</span></a>
 </section>
 
 <section class="sec">
@@ -227,59 +406,130 @@ df = pd.<span class="fn">read_csv</span>(<span class="st">"data.csv"</span>)
 }
 
 /* ---------------- modules ---------------- */
-const MOD_F={cat:""};
+const MOD_F={cat:"",sort:"curriculum"};
+const modCat=m=>m.category||MOD_CAT[m.id]||"Core";
+function moduleMaterial(m){
+ const mat=m.material||(!m.custom?`assets/modules/module-${m.id}.pdf`:"");
+ return /^(https?:|assets\/|\.{0,2}\/|data:application\/pdf|data:image\/)/i.test(mat)?mat:"";
+}
 function moduleCards(list){
  return list.map((m,i)=>{
-  const pct=modulePct(m);
+  const pct=modulePct(m),mat=moduleMaterial(m);
   return `<article class="card mod-card reveal" style="--i:${i}">
-   <div class="mod-top"><span class="mod-num">0${m.id}</span><span class="chip ${pct>=100?"green":""}">${MOD_CAT[m.id]||"Core"}</span></div>
+   <div class="mod-top"><span class="mod-num">0${m.id}</span><span class="chip ${pct>=100?"green":""}">${esc(modCat(m))}</span></div>
    <h3>${esc(m.title)}</h3><p>${esc(m.description)}</p>
-   <div class="mod-meta"><span>${IC.modules} ${m.topics.length} topics</span><span>${IC.book} Study guide</span><span>${IC.clock} ~45 min</span></div>
+   <div class="mod-meta"><span>${IC.modules} ${m.topics.length} topics</span><span>${IC.book} ${mat?"Material":"Outline"}</span><span>${IC.clock} ~45 min</span></div>
    ${modProg(m)}
-   <div class="card-actions"><a class="btn primary sm" href="module.html?id=${m.id}">${pct>0?"Continue":"Open"} module <span class="arr">→</span></a><a class="btn sm ghost" href="module.html?id=${m.id}#pdf">${IC.book} PDF</a></div>
+   <div class="card-actions"><a class="btn primary sm" href="module.html?id=${m.id}">${pct>0?"Continue":"Open"} module <span class="arr">→</span></a>${mat?`<a class="btn sm ghost" href="module.html?id=${m.id}#pdf">${IC.book} ${/^https?:/i.test(mat)?"Material":/^data:image/i.test(mat)?"Image":"PDF"}</a>`:""}</div>
    ${pct>0?`<div class="res-note">${pct>=100?"You completed this module.":"Last studied in this browser."}</div>`:""}
   </article>`}).join("");
 }
 function renderModules(){
  const grid=$("#moduleGrid");if(!grid)return;
  const k=($("#moduleSearch")?.value||"").toLowerCase();
- const list=modules.filter(m=>(!MOD_F.cat||MOD_CAT[m.id]===MOD_F.cat)&&(!k||JSON.stringify([m.title,m.description,m.topics]).toLowerCase().includes(k)));
- grid.innerHTML=moduleCards(list);
+ let list=modules.filter(m=>(!MOD_F.cat||modCat(m)===MOD_F.cat)&&(!k||JSON.stringify([m.title,m.description,m.topics,m.overview,m.objectives,m.applications]).toLowerCase().includes(k)));
+ if(MOD_F.sort==="title")list=list.slice().sort((a,b)=>String(a.title).localeCompare(String(b.title)));
+ else if(MOD_F.sort==="progress")list=list.slice().sort((a,b)=>modulePct(b)-modulePct(a)||String(a.title).localeCompare(String(b.title)));
+ grid.innerHTML=list.length?moduleCards(list):"";
+ swapCards(grid);
  const empty=$("#moduleEmpty");if(empty)empty.hidden=list.length>0;
 }
 function setModFilter(cat,btn){MOD_F.cat=cat;document.querySelectorAll("#modChips .fchip").forEach(b=>b.classList.toggle("on",b===btn));renderModules()}
+function setModSort(v){MOD_F.sort=v;renderModules()}
+function resetModules(){
+ const s=$("#moduleSearch");if(s)s.value="";
+ const sort=$("#moduleSort");if(sort)sort.value="curriculum";
+ MOD_F.cat="";MOD_F.sort="curriculum";
+ document.querySelectorAll("#modChips .fchip").forEach((b,i)=>b.classList.toggle("on",i===0));
+ renderModules();
+}
 function modulesPage(){
- const cats=[...new Set(modules.map(m=>MOD_CAT[m.id]||"Core"))];
- return `<div class="page-head"><div class="eyebrow">Curriculum · 5 modules</div><h1 class="page-title">Modules</h1><p class="lede">A complete Data Science pathway — from the lifecycle and Python ecosystem to model evaluation and deployment. Track your reading topic by topic.</p></div>
- <div class="toolbar"><div class="search-wrap">${IC.search}<input id="moduleSearch" placeholder="Search modules, topics…" aria-label="Search modules" oninput="renderModules()"><kbd>/</kbd></div><div class="chips" id="modChips"><button class="fchip on" onclick="setModFilter('',this)">All modules</button>${cats.map(c=>`<button class="fchip" onclick="setModFilter('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
+ const cats=[...new Set(modules.map(m=>modCat(m)))];
+ const hints=[...new Set(modules.flatMap(m=>[m.title,...m.topics,m.category||modCat(m)]).filter(Boolean))].slice(0,80);
+ return `<div class="page-head"><div class="eyebrow">Curriculum · ${modules.length} modules</div><h1 class="page-title">Modules</h1><p class="lede">A complete Data Science pathway — from the lifecycle and Python ecosystem to model evaluation and deployment. Track your reading topic by topic, or add your own module with a material link.</p><div class="head-actions"><button class="btn primary" onclick="addModule()">${IC.plus} Add module</button></div></div>
+ <div class="toolbar"><div class="search-wrap">${IC.search}<input id="moduleSearch" placeholder="Search modules, topics, objectives…" aria-label="Search modules" list="moduleHints" autocomplete="off" oninput="queueSearch('modules')"><kbd>/</kbd></div><select id="moduleSort" onchange="setModSort(this.value)" aria-label="Sort modules"><option value="curriculum">Curriculum order</option><option value="title">Title A–Z</option><option value="progress">Most complete</option></select><div class="chips" id="modChips"><button class="fchip on" onclick="setModFilter('',this)">All modules</button>${cats.map(c=>`<button class="fchip" onclick="setModFilter('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
+ <datalist id="moduleHints">${hints.map(t=>`<option value="${esc(t)}"></option>`).join("")}</datalist>
  <div class="mod-grid stagger" id="moduleGrid">${moduleCards(modules)}</div>
- <div class="empty-state" id="moduleEmpty" hidden><div class="illus">🔎</div><h3>No modules match that search</h3><p>Try a different keyword or switch back to all modules.</p><button class="btn" onclick="setModFilter('',document.querySelector('#modChips .fchip'))">Reset filters</button></div>`;
+ <div class="empty-state" id="moduleEmpty" hidden><div class="illus">🔎</div><h3>No modules match that search</h3><p>Try a different keyword or switch back to all modules.</p><button class="btn" onclick="resetModules()">Reset filters</button></div>`;
+}
+function addModule(){
+ modal("moduleModal",`<div class="modal-head"><div><div class="eyebrow">Curriculum</div><h2>Add a module</h2><p class="muted">Saved in this browser. Link a PDF or learning page, or attach a small local file.</p></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div>
+ <form id="addModuleForm" class="form" onsubmit="saveModule(event)">
+  <div class="grid2"><div class="field"><label for="md_title">Module title *</label><input id="md_title" required autocomplete="off" placeholder="e.g. Time Series Foundations"></div><div class="field"><label for="md_cat">Category</label><input id="md_cat" autocomplete="off" placeholder="e.g. Statistics" list="md_cats"></div></div>
+  <div class="field"><label for="md_desc">Short description *</label><input id="md_desc" required autocomplete="off" placeholder="One sentence shown on the module card"></div>
+  <div class="field"><label for="md_overview">Overview</label><textarea id="md_overview" placeholder="A short introduction to this module"></textarea></div>
+  <div class="grid2"><div class="field"><label for="md_topics">Topics <span class="muted">(one per line)</span></label><textarea id="md_topics" placeholder="Introduction\nCore concepts\nWorked example"></textarea></div><div class="field"><label for="md_obj">Learning objectives <span class="muted">(one per line)</span></label><textarea id="md_obj" placeholder="Explain…\nApply…"></textarea></div></div>
+  <div class="grid2"><div class="field"><label for="md_app">Applications <span class="muted">(one per line)</span></label><textarea id="md_app" placeholder="Forecasting\nRisk analysis"></textarea></div><div class="field"><label for="md_take">Key takeaways <span class="muted">(one per line)</span></label><textarea id="md_take" placeholder="Key idea…"></textarea></div></div>
+  <div class="grid2"><div class="field"><label for="md_res">Resources <span class="muted">(one per line)</span></label><textarea id="md_res" placeholder="Reading: https://…\nDataset note"></textarea></div><div class="field"><label for="md_mat">Original material URL <span class="muted">(PDF or page, optional)</span></label><input id="md_mat" placeholder="assets/modules/module-6.pdf or https://…" autocomplete="off"><div class="hint">Relative PDF paths and external links both work. Nothing is uploaded to a server.</div></div></div>
+  <div class="field"><label for="md_file">Or attach a small file <span class="muted">(PDF or image, up to 1.5 MB)</span></label><input id="md_file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp"><div class="hint">The file is kept only in this browser. For larger documents, use a link instead.</div></div>
+  <datalist id="md_cats">${[...new Set(modules.map(modCat))].map(c=>`<option value="${esc(c)}"></option>`).join("")}</datalist>
+  <div class="row end"><button type="button" class="btn" onclick="this.closest('.modal').classList.remove('open')">Cancel</button><button class="btn primary" id="md_save" type="submit">Save module</button></div>
+ </form>`);
+}
+function moduleLines(id){return ($("#"+id)?.value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
+function saveModule(e){
+ if(e)e.preventDefault();
+ const title=$("#md_title")?.value.trim(),desc=$("#md_desc")?.value.trim();
+ if(!title||!desc)return toast("Title and description are required");
+ const file=$("#md_file")?.files?.[0],url=($("#md_mat")?.value||"").trim();
+ if(file&&file.size>1.5*1024*1024)return toast("Please choose a file under 1.5 MB, or paste a link instead");
+ if(file&&!/^(application\/pdf|image\/(png|jpeg|webp))$/i.test(file.type||""))return toast("Choose a PDF, PNG, JPEG or WebP file");
+ if(!file&&url&&!/^(https?:|assets\/|\.{0,2}\/)/i.test(url))return toast("Use an http(s) link or a relative path for the material URL");
+ const saveBtn=$("#md_save");btnBusy(saveBtn,file?"Saving file…":"Saving module…");
+ const save=(material)=>{
+  const extra=J(MOD_STORE,[]);
+  const nextId=modules.concat(extra).reduce((n,x)=>{const v=parseInt(x.id,10);return Number.isFinite(v)?Math.max(n,v):n},0)+1;
+  const m={id:String(nextId),custom:true,title,description:desc,category:$("#md_cat")?.value.trim()||"Custom",overview:$("#md_overview")?.value.trim()||desc,topics:moduleLines("md_topics"),objectives:moduleLines("md_obj"),applications:moduleLines("md_app"),resources:moduleLines("md_res"),takeaways:moduleLines("md_take"),material};
+  extra.push(m);
+  try{localStorage.setItem(MOD_STORE,JSON.stringify(extra))}catch(err){btnIdle(saveBtn);toast("This browser is out of storage. Choose a smaller file or paste a link.","error");return}
+  modules.push(m);logAct("Added module 0"+m.id+" · "+title);
+  toast("Module saved — opening it now","success");location.href="module.html?id="+encodeURIComponent(m.id);
+ };
+ if(file){
+  const reader=new FileReader();
+  reader.onload=()=>save(String(reader.result||""));
+  reader.onerror=()=>{btnIdle(saveBtn);toast("Could not read that file","error")};
+  reader.readAsDataURL(file);
+ }else save(url);
+}
+function removeModule(id){
+ const m=modules.find(x=>String(x.id)===String(id)&&x.custom);if(!m)return;
+ if(!confirm("Remove “"+m.title+"” from this browser? Default course modules cannot be removed."))return;
+ localStorage.setItem(MOD_STORE,JSON.stringify(J(MOD_STORE,[]).filter(x=>String(x.id)!==String(id))));
+ modules=modules.filter(x=>x!==m);toast("Custom module removed");location.href="modules.html";
 }
 
 /* ---------------- module detail ---------------- */
 function modulePage(){
- const m=modules.find(x=>x.id==q.get("id"))||modules[0],pdf=`assets/modules/module-${m.id}.pdf`,pct=modulePct(m);
+ const id=q.get("id"),m=modules.find(x=>String(x.id)===String(id));
+ if(!m)return `<a class="btn sm ghost" href="modules.html">← All modules</a><div class="empty-state" style="margin-top:20px"><div class="illus">${IC.modules}</div><h2>Module not found</h2><p>This module may have been removed from this browser, or the link is incomplete.</p><a class="btn primary" href="modules.html">Browse all modules</a></div>`;
+ const mat=moduleMaterial(m),pct=modulePct(m);
+ const isPdf=!!mat&&(/\.pdf($|[?#])/i.test(mat)||/^assets\//.test(mat)||/^data:application\/pdf/i.test(mat));
+ const isImg=!!mat&&/^data:image\//i.test(mat);
+ const list=(arr,msg)=>arr&&arr.length?`<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<p class="muted">${esc(msg)}</p>`;
+ const resList=(arr)=>arr&&arr.length?`<ul>${arr.map(x=>{const u=(String(x).match(/https?:\/\/[^\s]+/)||[])[0];return u?`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(x)}</a></li>`:`<li>${esc(x)}</li>`}).join("")}</ul>`:`<p class="muted">No extra resources added yet.</p>`;
+ const reader=isImg?`<div class="row" style="margin:12px 0;flex-wrap:wrap"><a class="btn" href="${esc(mat)}" download>${IC.book} Download image</a></div><img src="${esc(mat)}" alt="Uploaded module material" loading="lazy" decoding="async" style="width:100%;max-height:720px;object-fit:contain;border:1px solid var(--bd);border-radius:14px;background:var(--card-solid)">`:mat?(isPdf?`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn" onclick="pdfView('vertical')">Vertical view</button><button class="btn" onclick="pdfView('flip')">Flip-book view</button><a class="btn" href="${esc(mat)}" target="_blank" rel="noopener">Open PDF ${IC.external}</a></div>
+    <div id="pdfVertical"><iframe title="Module PDF vertical reader" src="${esc(mat)}#view=FitH" style="width:100%;height:680px;border:1px solid var(--bd);border-radius:14px"></iframe></div>
+    <div id="pdfFlip" hidden><div class="flipbook"><canvas id="pdfCanvas" style="width:100%;max-height:650px;object-fit:contain;background:white"></canvas><div class="row sp" style="margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="flipPdf(-999)">⇤ First</button><button class="btn" onclick="flipPdf(-1)">← Previous</button><span id="pdfPageNum">Page 1</span><button class="btn" onclick="flipPdf(1)">Next →</button><button class="btn" onclick="flipPdf(999)">Last ⇥</button><button class="btn" onclick="zoomPdf(-.15)">−</button><button class="btn" onclick="zoomPdf(.15)">＋</button></div></div></div>`:`<div class="empty-state" style="margin-top:12px"><div class="illus">${IC.external}</div><h3>Original learning material</h3><p>This link opens outside the portal. Use it to read the original page or download the file.</p><a class="btn primary" href="${esc(mat)}" target="_blank" rel="noopener">Open original material ${IC.external}</a></div>`):`<div class="empty-state" style="margin-top:12px"><div class="illus">${IC.book}</div><h3>No original material attached</h3><p>This custom module keeps your topics and notes only. Create a module with a PDF path, page URL, or small local file to attach the source material.</p><button class="btn" onclick="addModule()">${IC.plus} Add another module</button></div>`;
  return `<a class="btn sm ghost" href="modules.html">← All modules</a>
  <div class="detail-head" style="margin-top:14px">
-  <div class="chips"><span class="chip">Module 0${m.id}</span><span class="chip yellow">${MOD_CAT[m.id]||"Core"}</span><span class="chip plain">${m.topics.length} topics</span></div>
+  <div class="chips"><span class="chip">Module 0${esc(m.id)}</span><span class="chip yellow">${esc(modCat(m))}</span><span class="chip plain">${m.topics.length} topics</span>${m.custom?`<span class="chip plain">Custom · local</span>`:""}</div>
   <h1>${esc(m.title)}</h1><p class="lede muted">${esc(m.description)}</p>
-  <div class="row" style="gap:10px;flex-wrap:wrap"><a class="btn primary" href="#pdf">${IC.book} Open study guide</a><a class="btn" href="#to">Continue learning</a></div>
+  <div class="row" style="gap:10px;flex-wrap:wrap"><a class="btn primary" href="#pdf">${IC.book} ${mat?"Open material":"Module outline"}</a><a class="btn" href="#to">Continue learning</a>${m.custom?`<button class="btn sm remove-btn" onclick="removeModule('${esc(m.id)}')">${IC.trash} Remove module</button>`:""}</div>
  </div>
  <div class="split">
-  <div class="side"><div class="lbl">On this page</div><a href="#ov">Overview</a><a href="#pr">Your progress</a><a href="#ob">Objectives</a><a href="#to">Topics</a><a href="#ap">Applications</a><a href="#pdf">Study guide</a><a href="#res">Resources</a><a href="#tk">Takeaways</a></div>
+  <div class="side"><div class="lbl">On this page</div><a href="#ov">Overview</a><a href="#pr">Your progress</a><a href="#ob">Objectives</a><a href="#to">Topics</a><a href="#ap">Applications</a><a href="#pdf">Study material</a><a href="#res">Resources</a><a href="#tk">Takeaways</a></div>
   <div class="grid" style="gap:16px">
    <section class="card" id="ov"><h2>Overview</h2><p>${esc(m.overview)}</p></section>
-   <section class="card" id="pr"><div class="row sp"><div><h2>Your progress</h2><p class="muted">Tap topics below to mark them complete. Progress is stored in this browser.</p></div><div class="ring" data-modring="${m.id}" style="--p:${pct}"><b data-modpct="${m.id}">${pct}%</b></div></div><div class="bar-track" style="margin-top:10px"><i class="bar-fill" data-modbar="${m.id}" style="--w:${pct}%"></i></div><div class="prog-head" style="margin-top:8px"><span>${pct>=100?"Module completed":"Keep going"}</span><span data-modcount="${m.id}">${(prog().topics[m.id]||[]).length}/${m.topics.length} topics</span></div></section>
-   <section class="card" id="ob"><h2>Learning objectives</h2><ul>${m.objectives.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
-   <section class="card" id="to"><h2>Topics</h2><p class="muted">Mark each topic as you finish it — your module progress updates instantly.</p><div class="topics">${m.topics.map((t,i)=>{const d=topicDone(m.id,i);return `<button class="topic ${d?"done":""}" onclick="toggleTopic(${m.id},${i},this)" aria-pressed="${d?"true":"false"}"><span class="tick">✓</span><span>${esc(t)}</span></button>`}).join("")}</div></section>
-   <section class="card" id="ap"><h2>Practical applications</h2><ul>${m.applications.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
-   <section class="card" id="pdf"><div class="row sp"><div><h2>Module study guide</h2><p class="muted">15-page PDF · read online, flip through it, or download for offline study.</p></div><a class="btn primary" href="${pdf}" download>${IC.book} Download PDF</a></div>
-    <div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn" onclick="pdfView('vertical')">Vertical view</button><button class="btn" onclick="pdfView('flip')">Flip-book view</button><a class="btn" href="${pdf}" target="_blank" rel="noopener">Open PDF ${IC.external}</a></div>
-    <div id="pdfVertical"><iframe title="Module PDF vertical reader" src="${pdf}#view=FitH" style="width:100%;height:680px;border:1px solid var(--bd);border-radius:14px"></iframe></div>
-    <div id="pdfFlip" hidden><div class="flipbook"><canvas id="pdfCanvas" style="width:100%;max-height:650px;object-fit:contain;background:white"></canvas><div class="row sp" style="margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="flipPdf(-999)">⇤ First</button><button class="btn" onclick="flipPdf(-1)">← Previous</button><span id="pdfPageNum">Page 1</span><button class="btn" onclick="flipPdf(1)">Next →</button><button class="btn" onclick="flipPdf(999)">Last ⇥</button><button class="btn" onclick="zoomPdf(-.15)">−</button><button class="btn" onclick="zoomPdf(.15)">＋</button></div></div></div>
+   <section class="card" id="pr"><div class="row sp"><div><h2>Your progress</h2><p class="muted">Tap topics below to mark them complete. Progress is stored in this browser.</p></div><div class="ring" data-modring="${m.id}" data-ring="${pct}" style="--p:0"><b data-modpct="${m.id}">${pct}%</b></div></div><div class="bar-track" style="margin-top:10px"><i class="bar-fill" data-modbar="${m.id}" style="--w:${pct}%"></i></div><div class="prog-head" style="margin-top:8px"><span>${pct>=100?"Module completed":"Keep going"}</span><span data-modcount="${m.id}">${(prog().topics[m.id]||[]).length}/${m.topics.length} topics</span></div></section>
+   <section class="card" id="ob"><h2>Learning objectives</h2>${list(m.objectives,"No learning objectives added yet.")}</section>
+   <section class="card" id="to"><h2>Topics</h2><p class="muted">Mark each topic as you finish it — your module progress updates instantly.</p><div class="topics">${m.topics.length?m.topics.map((t,i)=>{const d=topicDone(m.id,i);return `<button class="topic ${d?"done":""}" onclick="toggleTopic('${esc(m.id)}',${i},this)" aria-pressed="${d?"true":"false"}"><span class="tick">✓</span><span>${esc(t)}</span></button>`}).join(""):`<p class="muted">No topics added to this module.</p>`}</div></section>
+   <section class="card" id="ap"><h2>Practical applications</h2>${list(m.applications,"No applications added yet.")}</section>
+   <section class="card" id="pdf"><div class="row sp"><div><h2>Module study material</h2><p class="muted">${mat?(isImg?"Original image · stored in this browser.":"Original material · read online"+(isPdf?", flip through it, or download for offline study.":".")):"Attach an original PDF, learning page, or small local file when you create a custom module."}</p></div>${mat?`<a class="btn primary" href="${esc(mat)}"${(isPdf||isImg)?" download":""}>${IC.book} ${isPdf?"Download PDF":isImg?"Download image":"Open material"}</a>`:""}</div>
+    ${reader}
    </section>
-   <section class="card" id="res"><h2>Notes &amp; resources</h2><ul>${m.resources.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
-   <section class="card" id="tk"><h2>Key takeaways</h2><ul>${m.takeaways.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
+   <section class="card" id="res"><h2>Notes &amp; resources</h2>${resList(m.resources)}</section>
+   <section class="card" id="tk"><h2>Key takeaways</h2>${list(m.takeaways,"No takeaways added yet.")}</section>
   </div>
  </div>`;
 }
@@ -323,7 +573,7 @@ function experimentsPage(){
  </section>
  <section class="sec" style="margin-top:24px">
   <div class="section-head"><div><div class="eyebrow">Lab catalogue</div><h2>All experiments</h2><p>Filter by subject or level, then open a lab or jump straight into any sub-experiment.</p></div><button class="btn primary" onclick="addE()">${IC.plus} Add experiment</button></div>
-  <div class="toolbar"><div class="search-wrap">${IC.search}<input id="sr" placeholder="Search experiment name, topic or number…" aria-label="Search experiments" oninput="filt()"><kbd>/</kbd></div><select id="expLevel" onchange="filt()" aria-label="Filter by level"><option value="">All levels</option>${levels.map(l=>`<option>${esc(l)}</option>`).join("")}</select></div>
+  <div class="toolbar"><div class="search-wrap">${IC.search}<input id="sr" placeholder="Search experiment name, topic or number…" aria-label="Search experiments" oninput="queueSearch('experiments')"><kbd>/</kbd></div><select id="expLevel" onchange="filt()" aria-label="Filter by level"><option value="">All levels</option>${levels.map(l=>`<option>${esc(l)}</option>`).join("")}</select></div>
   <div class="chips" id="expChips" style="margin-bottom:16px"><button class="fchip on" onclick="setExpFilter('',this)">All subjects</button>${subjects.map(s=>`<button class="fchip" onclick="setExpFilter('${esc(s)}',this)">${esc(s)}</button>`).join("")}</div>
   <div class="exp-grid stagger" id="el"></div>
   <div id="none" class="empty-state" hidden><div class="illus">🔬</div><h3>No experiments found</h3><p>Try another keyword, subject or level.</p><button class="btn" onclick="document.getElementById('sr').value='';setExpFilter('',document.querySelector('#expChips .fchip'))">Reset search</button></div>
@@ -392,17 +642,20 @@ function toolCard(t,i){
 function renderTools(){
  const grid=$("#toolGrid");if(!grid)return;
  const k=($("#toolSearch")?.value||"").toLowerCase();
- const list=tools.filter(t=>{const m=TOOLMETA[t[0]]||{c:"Tool"};return (!TOOL_F.cat||m.c===TOOL_F.cat)&&(!k||(t[0]+" "+(TD[t[0]]||"")).toLowerCase().includes(k))});
+ const list=tools.filter(t=>{const m=TOOLMETA[t[0]]||{c:"Tool"};return (!TOOL_F.cat||m.c===TOOL_F.cat)&&(!k||(t[0]+" "+(TD[t[0]]||"")+" "+m.c).toLowerCase().includes(k))});
  grid.innerHTML=list.map(toolCard).join("");
+ swapCards(grid);
  const e=$("#toolEmpty");if(e)e.hidden=list.length>0;
 }
 function setToolFilter(c,btn){TOOL_F.cat=c;document.querySelectorAll("#toolChips .fchip").forEach(b=>b.classList.toggle("on",b===btn));renderTools()}
 function toolsPage(){
  const cats=[...new Set(tools.map(t=>(TOOLMETA[t[0]]||{c:"Tool"}).c))];
+ const hints=[...new Set(tools.flatMap(t=>[t[0],(TOOLMETA[t[0]]||{}).c,TD[t[0]]]).filter(Boolean))];
  return `<div class="page-head"><div class="eyebrow">Resource · Toolkit</div><h1 class="page-title">Tools</h1><p class="lede">The working toolkit behind every module and lab — languages, notebooks, visualisation libraries and BI platforms, each linked to its official site.</p></div>
- <div class="toolbar"><div class="search-wrap">${IC.search}<input id="toolSearch" placeholder="Search tools…" aria-label="Search tools" oninput="renderTools()"><kbd>/</kbd></div><div class="chips" id="toolChips"><button class="fchip on" onclick="setToolFilter('',this)">All tools</button>${cats.map(c=>`<button class="fchip" onclick="setToolFilter('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
+ <div class="toolbar"><div class="search-wrap">${IC.search}<input id="toolSearch" placeholder="Search tools, categories…" aria-label="Search tools" list="toolHints" autocomplete="off" oninput="queueSearch('tools')"><kbd>/</kbd></div><div class="chips" id="toolChips"><button class="fchip on" onclick="setToolFilter('',this)">All tools</button>${cats.map(c=>`<button class="fchip" onclick="setToolFilter('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
+ <datalist id="toolHints">${hints.map(t=>`<option value="${esc(t)}"></option>`).join("")}</datalist>
  <div class="tool-grid stagger" id="toolGrid">${tools.map(toolCard).join("")}</div>
- <div class="empty-state" id="toolEmpty" hidden><div class="illus">🧰</div><h3>No tools match</h3><p>Try another keyword or category.</p></div>`;
+ <div class="empty-state" id="toolEmpty" hidden><div class="illus">🧰</div><h3>No tools match</h3><p>Try another keyword or category.</p><button class="btn" onclick="const s=$('#toolSearch');if(s)s.value='';setToolFilter('',document.querySelector('#toolChips .fchip'))">Reset search</button></div>`;
 }
 
 /* ---------------- resources ---------------- */
@@ -458,7 +711,7 @@ function resCard(r,i){
    <div class="res-meta-line">${r.author?`<span>By ${esc(r.author)}</span><span class="sep"></span>`:""}<span>${date?"Added "+esc(date):"In the library"}</span></div>
    <div class="card-actions">${open}
     <button class="btn sm bm ${sv?"on":""}" data-key="${esc(key)}" onclick="toggleSave(this.dataset.key)" aria-pressed="${sv?"true":"false"}" aria-label="${sv?"Remove bookmark":"Bookmark this resource"}">${IC.star} ${sv?"Saved":"Save"}</button>
-    <button class="btn sm" data-key="${esc(key)}" onclick="removeResource(this.dataset.key)" aria-label="Remove ${esc(r.title)}">${IC.trash} Remove</button>
+    <button class="btn sm remove-btn" data-key="${esc(key)}" onclick="removeResource(this.dataset.key)" aria-label="Remove ${esc(r.title)}">${IC.trash} Remove</button>
    </div>
   </div>
  </article>`;
@@ -473,25 +726,36 @@ function renderResources(mode){
   return (!cat||r.category===cat)&&(!typ||m.k===typ)&&(!sub||subjectOf(r)===sub)&&(!RS.saved||sv.includes(rkey(r)))&&(!k||JSON.stringify([r.title,r.description,r.category,r.type,subjectOf(r),r.author||""]).toLowerCase().includes(k));
  });
  list=list.slice().sort((a,b)=>sort==="title"?String(a.title).localeCompare(String(b.title)):sort==="old"?((a.addedAt||0)-(b.addedAt||0)):((b.addedAt||0)-(a.addedAt||0)));
- grid.innerHTML=list.length?list.map(resCard).join(""):`<div class="empty-state"><div class="illus">📚</div><h3>${RS.saved?"No saved resources yet":"No resources match"}</h3><p>${RS.saved?"Bookmark a resource and it will appear here.":"Try a different keyword or clear the filters — or add the first resource for this topic."}</p><button class="btn primary" onclick="${RS.saved?"setSavedOnly(document.getElementById('savedChip'))":"addResource()"}">${RS.saved?"Show all resources":"+ Add a resource"}</button></div>`;
+ grid.innerHTML=list.length?list.map(resCard).join(""):`<div class="empty-state"><div class="illus">📚</div><h3>${RS.saved?"No saved resources yet":"No resources match"}</h3><p>${RS.saved?"Bookmark a resource and it will appear here.":"Try a different keyword or clear the filters — or add the first resource for this topic."}</p><div class="row" style="justify-content:center;flex-wrap:wrap"><button class="btn primary" onclick="${RS.saved?"setSavedOnly(document.getElementById('savedChip'))":"addResource()"}">${RS.saved?"Show all resources":"+ Add a resource"}</button><button class="btn" onclick="clearResFilters()">Clear filters</button></div></div>`;
+ if(mode!=="boot")swapCards(grid);
  grid.classList.toggle("list",RS.view==="list");
  const count=$("#rCount");if(count)count.textContent=`${list.length} of ${rs.length} resources · ${sv.length} saved`;
- const sc=$("#savedCount");if(sc)sc.textContent=sv.length;
+ const sc=$("#savedCount");if(sc){sc.textContent=sv.length;sc.classList.remove("count-pop");void sc.offsetWidth;sc.classList.add("count-pop")}
  const chip=$("#savedChip");if(chip){chip.classList.toggle("on",RS.saved);chip.setAttribute("aria-pressed",RS.saved?"true":"false")}
  const empty=$("#resEmpty");if(empty)empty.hidden=!!list.length;
 }
+function clearResFilters(){
+ ["resourceSearch","resourceCat","resourceType","resourceSubject"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+ RS.saved=false;
+ const sort=$("#resourceSort");if(sort)sort.value="new";
+ const chip=$("#savedChip");if(chip){chip.classList.remove("on");chip.setAttribute("aria-pressed","false")}
+ renderResources();
+ toast("Library filters cleared","success");
+}
 function resourcesPage(){
  const rs=resources(),cats=[...new Set(rs.map(r=>r.category).filter(Boolean))],types=[...new Set(["PDF","YouTube","Video","Notes","Document","Website",...rs.map(r=>typeMeta(r.type).k)])];
+ const hints=[...new Set(rs.flatMap(r=>[r.title,r.category,r.type,subjectOf(r),r.author||""]).filter(Boolean))].slice(0,120);
  return `<div class="res-head"><div><div class="eyebrow">Digital library · ${rs.length} resources</div><h1>Your Digital Knowledge Hub</h1><p>Discover, organize, and explore resources for your next big idea.</p></div><button class="btn cta-red lg ph" onclick="addResource()">${IC.plus} Add Resource</button></div>
  <div class="res-bar card">
-  <div class="search-wrap">${IC.search}<input id="resourceSearch" placeholder="Search title, description, author…" aria-label="Search resources" oninput="renderResources()"><kbd>/</kbd></div>
+  <div class="search-wrap">${IC.search}<input id="resourceSearch" placeholder="Search title, topic, author…" aria-label="Search resources" list="resourceHints" autocomplete="off" oninput="queueSearch('resources')"><kbd>/</kbd></div>
   <select id="resourceCat" onchange="renderResources()" aria-label="Filter by category"><option value="">All categories</option>${cats.map(c=>`<option>${esc(c)}</option>`).join("")}</select>
   <select id="resourceType" onchange="renderResources()" aria-label="Filter by type"><option value="">All types</option>${types.map(t=>`<option>${esc(t)}</option>`).join("")}</select>
   <select id="resourceSubject" onchange="renderResources()" aria-label="Filter by subject"><option value="">All subjects</option>${SUBJECTS.map(s=>`<option>${esc(s)}</option>`).join("")}</select>
   <select id="resourceSort" onchange="renderResources()" aria-label="Sort resources"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="title">Title A–Z</option></select>
   <div class="seg" role="group" aria-label="View mode"><button data-view="grid" class="on" aria-pressed="true" onclick="setRView('grid',this)" aria-label="Grid view">${IC.grid}</button><button data-view="list" aria-pressed="false" onclick="setRView('list',this)" aria-label="List view">${IC.list}</button></div>
  </div>
- <div class="res-meta"><span id="rCount">Loading resources…</span><button class="fchip" id="savedChip" aria-pressed="false" onclick="setSavedOnly(this)">${IC.star} Saved <span id="savedCount">0</span></button></div>
+ <datalist id="resourceHints">${hints.map(t=>`<option value="${esc(t)}"></option>`).join("")}</datalist>
+ <div class="res-meta"><span id="rCount">Loading resources…</span><div class="row" style="gap:8px;flex-wrap:wrap"><button class="fchip" id="savedChip" aria-pressed="false" onclick="setSavedOnly(this)">${IC.star} Saved <span id="savedCount">0</span></button><button class="fchip" onclick="clearResFilters()">Clear filters</button></div></div>
  <div class="rgrid" id="resourceGrid" aria-live="polite">${skeletons(6)}</div>
  <div id="resEmpty" hidden></div>`;
 }
@@ -525,13 +789,23 @@ function saveResource(ev){
   (title?u:t).focus();toast("Title and URL are required");return;
  }
  const rec={title,url,category:$("#r_category").value,type:$("#r_type").value,subject:$("#r_subject")?.value||"",author:$("#r_author")?.value.trim()||"",description:$("#r_desc")?.value.trim()||"",addedAt:Date.now()};
- if(btn){btn.disabled=true;btn.textContent="Saving…"}
+ btnBusy(btn,"Saving resource…");
  setTimeout(()=>{
-  const rs=resources();rs.unshift(rec);localStorage.setItem("mbu_resources",JSON.stringify(rs));
-  const m=$("#addResource");if(m)m.classList.remove("open");
-  logAct("Added resource “"+rec.title+"”");toast("Resource saved to your library");
-  renderResources();
-  const grid=$("#resourceGrid");if(grid){const first=grid.querySelector(".res-card");if(first){first.classList.add("flash");try{first.scrollIntoView({behavior:"smooth",block:"center"})}catch{}}}
+  try{
+   const rs=resources();rs.unshift(rec);localStorage.setItem("mbu_resources",JSON.stringify(rs));
+  }catch(e){
+   btnFeedback(btn,"error","Storage full");
+   if(err){err.textContent="This browser is out of storage. Remove a resource or clear saved data and try again.";err.classList.add("show")}
+   toast("Could not save — browser storage is full","error");
+   return;
+  }
+  btnFeedback(btn,"success","Saved");
+  logAct("Added resource “"+rec.title+"”");toast("Resource saved to your library","success");
+  setTimeout(()=>{
+   const m=$("#addResource");if(m)m.classList.remove("open");
+   renderResources();
+   const grid=$("#resourceGrid");if(grid){const first=grid.querySelector(".res-card");if(first){first.classList.add("flash");try{first.scrollIntoView({behavior:"smooth",block:"center"})}catch{}}}
+  },320);
  },180);
 }
 function removeResource(keyOrIndex){
@@ -548,9 +822,16 @@ function toggleSave(key){
  localStorage.setItem(SKEY,JSON.stringify(s));
  const r=resources().find(x=>rkey(x)===key);
  logAct((at<0?"Saved “":"Removed “")+(r?r.title:"resource")+"”");
- toast(at<0?"Saved to your library":"Removed from saved");
- if(page==="student"){rerender();return}
+ toast(at<0?"Saved to your library":"Removed from saved","success");
+ if(page==="student"){
+  const y=window.scrollY;
+  rerender();
+  window.scrollTo(0,y);
+  setTimeout(()=>{const b=[...document.querySelectorAll(".rec-save,.bm")].find(x=>x.dataset.key===key);if(b&&at<0){b.classList.add("pop");setTimeout(()=>b.classList.remove("pop"),500)}},80);
+  return;
+ }
  renderResources();
+ if(at<0)setTimeout(()=>{const b=[...document.querySelectorAll(".bm")].find(x=>x.dataset.key===key);if(b){b.classList.add("pop");setTimeout(()=>b.classList.remove("pop"),500)}},60);
 }
 
 /* ---------------- projects ---------------- */
@@ -558,6 +839,13 @@ function getProjects(){return J("mbu_projects",[
  {id:"seed-1",title:"Student Performance Analysis",description:"Explore student marks, attendance, and performance trends using Python.",category:"Data Science",tech:"Python, Pandas, Matplotlib",url:"https://github.com/topics/student-performance-analysis"},
  {id:"seed-2",title:"Gas Leakage Detection System",description:"An academic project concept for detecting gas leakage and triggering alerts.",category:"IoT",tech:"Sensors, Embedded Systems",url:""}
 ])}
+function youtubeUrlForProject(p){
+ const direct=String(p.youtube||"").trim();
+ if(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(direct))return direct;
+ const stack=String(p.tech||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,3).join(" ");
+ const query=[p.title,p.category,stack,"data science project tutorial"].filter(Boolean).join(" ");
+ return "https://www.youtube.com/results?search_query="+encodeURIComponent(query);
+}
 const PRJ={cat:""};
 function projCard(p,i){
  const st=p.status||"Project",tech=esc(p.tech||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -569,9 +857,10 @@ function projCard(p,i){
    <div class="tech tagrow">${tech.slice(0,4).map(t=>`<span class="chip plain">${esc(t)}</span>`).join("")||`<span class="chip plain">Stack not specified</span>`}</div>
    <div class="card-actions">
     <button class="btn primary sm" onclick="openProject('${esc(p.id)}')">${IC.eye} Details</button>
+    <a class="btn sm yt" href="${esc(youtubeUrlForProject(p))}" target="_blank" rel="noopener" aria-label="Watch ${esc(p.title)} tutorial on YouTube">${IC.play} Watch on YouTube</a>
     ${p.url?`<a class="btn sm" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.external} Visit</a>`:""}
     <button class="btn sm" onclick="editProject('${esc(p.id)}')">${IC.edit} Edit</button>
-    <button class="btn sm" onclick="deleteProject('${esc(p.id)}')" aria-label="Delete ${esc(p.title)}">${IC.trash}</button>
+    <button class="btn sm remove-btn" onclick="deleteProject('${esc(p.id)}')" aria-label="Delete ${esc(p.title)}">${IC.trash}</button>
    </div>
   </div>
  </article>`;
@@ -581,13 +870,14 @@ function renderProjects(){
  const k=($("#projectSearch")?.value||"").toLowerCase();
  const list=getProjects().filter(p=>(!PRJ.cat||(p.category||"Uncategorised")===PRJ.cat)&&(!k||JSON.stringify([p.title,p.description,p.category,p.tech,p.status||""]).toLowerCase().includes(k)));
  grid.innerHTML=list.map(projCard).join("");
+ swapCards(grid);
  const empty=$("#projectEmpty");if(empty)empty.hidden=list.length>0;
 }
 function setProjCat(cat,btn){PRJ.cat=cat;document.querySelectorAll("#projChips .fchip").forEach(b=>b.classList.toggle("on",b===btn));renderProjects()}
 function projectsPage(){
  const cats=[...new Set(getProjects().map(p=>p.category||"Uncategorised"))];
  return `<div class="page-head"><div class="eyebrow">Project studio · ${getProjects().length} projects</div><h1 class="page-title">Projects</h1><p class="lede">Academic builds, experiments and ideas from the project catalogue. Add your own, edit the details, or open a live demo.</p><div class="head-actions"><button class="btn cta-red lg ph" onclick="addProject()">${IC.plus} Add New Project</button></div></div>
- <div class="toolbar"><div class="search-wrap">${IC.search}<input id="projectSearch" placeholder="Search projects, technologies…" aria-label="Search projects" oninput="renderProjects()"><kbd>/</kbd></div><div class="chips" id="projChips"><button class="fchip on" onclick="setProjCat('',this)">All projects</button>${cats.map(c=>`<button class="fchip" onclick="setProjCat('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
+ <div class="toolbar"><div class="search-wrap">${IC.search}<input id="projectSearch" placeholder="Search projects, technologies…" aria-label="Search projects" oninput="queueSearch('projects')"><kbd>/</kbd></div><div class="chips" id="projChips"><button class="fchip on" onclick="setProjCat('',this)">All projects</button>${cats.map(c=>`<button class="fchip" onclick="setProjCat('${esc(c)}',this)">${esc(c)}</button>`).join("")}</div></div>
  <div class="pgrid stagger" id="projectGrid"></div>
  <div class="empty-state" id="projectEmpty" hidden><div class="illus">🚀</div><h3>No projects match</h3><p>Try another search or add a new project to the studio.</p><button class="btn primary" onclick="addProject()">${IC.plus} Add a project</button></div>`;
 }
@@ -602,6 +892,7 @@ function addProject(p={}){
   </div>
   <div class="field"><label for="p_tech">Technology stack</label><input id="p_tech" value="${esc(p.tech||"")}" placeholder="Python, Pandas, …" autocomplete="off"></div>
   <div class="field"><label for="p_url">Documentation / demo / repository URL</label><input id="p_url" value="${esc(p.url||"")}" placeholder="https://…" autocomplete="off"></div>
+  <div class="field"><label for="p_youtube">YouTube tutorial URL (optional)</label><input id="p_youtube" value="${esc(p.youtube||"")}" placeholder="Leave blank to search YouTube by title and stack" autocomplete="off"></div>
   <div class="row end" style="margin-top:14px"><button class="btn" type="button" onclick="this.closest('.modal').classList.remove('open')">Cancel</button><button class="btn primary" type="submit">${IC.plus} Save project</button></div>
  </form>`);
 }
@@ -609,7 +900,7 @@ function saveProject(id,ev){
  if(ev&&ev.preventDefault)ev.preventDefault();
  const title=$("#p_title")?.value.trim();
  if(!title){$("#p_title")?.classList.add("bad");toast("Project title is required");return}
- const ps=getProjects(),p={id:id||("p-"+Date.now()),title,description:$("#p_desc").value.trim(),category:$("#p_cat").value.trim()||"Uncategorised",tech:$("#p_tech").value.trim(),url:$("#p_url").value.trim(),status:$("#p_status")?.value||"In progress"};
+ const ps=getProjects(),p={id:id||("p-"+Date.now()),title,description:$("#p_desc").value.trim(),category:$("#p_cat").value.trim()||"Uncategorised",tech:$("#p_tech").value.trim(),url:$("#p_url").value.trim(),youtube:$("#p_youtube").value.trim(),status:$("#p_status")?.value||"In progress"};
  const ix=ps.findIndex(x=>x.id===id);if(ix>=0)ps[ix]=p;else ps.unshift(p);
  localStorage.setItem("mbu_projects",JSON.stringify(ps));
  $("#projectModal")?.classList.remove("open");
@@ -631,29 +922,50 @@ function openProject(id){
  <div class="tagrow" style="margin-bottom:14px"><span class="chip ${p.status==="Completed"?"green":p.status==="Idea"?"yellow":""}">${esc(p.status||"Project")}</span>${tech.map(t=>`<span class="chip plain">${esc(t)}</span>`).join("")}</div>
  <p>${esc(p.description||"No description yet.")}</p>
  <dl style="margin-top:16px"><dt>Category</dt><dd>${esc(p.category||"—")}</dd><dt>Stack</dt><dd>${esc(p.tech||"Not specified")}</dd><dt>Status</dt><dd>${esc(p.status||"Project")}</dd></dl>
- <div class="row end" style="margin-top:6px"><button class="btn" onclick="this.closest('.modal').classList.remove('open')">Close</button><button class="btn" onclick="this.closest('.modal').classList.remove('open');editProject('${esc(p.id)}')">${IC.edit} Edit</button>${p.url?`<a class="btn primary" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.external} Visit project</a>`:`<button class="btn primary" onclick="toast('No project link has been added')">Add a link first</button>`}</div>`);
+ <div class="row end" style="margin-top:6px"><button class="btn" onclick="this.closest('.modal').classList.remove('open')">Close</button><button class="btn" onclick="this.closest('.modal').classList.remove('open');editProject('${esc(p.id)}')">${IC.edit} Edit</button><a class="btn primary" href="${esc(youtubeUrlForProject(p))}" target="_blank" rel="noopener">${IC.play} Watch on YouTube</a>${p.url?`<a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.external} Visit project</a>`:`<button class="btn" onclick="toast('No project link has been added')">Add a link first</button>`}</div>`);
 }
 
 /* ---------------- student ---------------- */
+function perfItem(label,pct,note){
+ const value=Math.max(0,Math.min(100,pct));
+ return `<div class="perf-item"><div class="ring" data-ring="${value}" style="--p:0" aria-label="${esc(label)} ${value}%"><b><span data-count="${value}">${value}</span>%</b></div><div class="perf-copy"><b>${esc(label)}</b><span>${esc(note||"")}</span></div></div>`;
+}
 function studentPage(){
  const p=prog(),sv=savedList(),ps=getProjects();
- const doneMods=modules.filter(m=>modulePct(m)>=100).length;
- const topicsDone=modules.reduce((a,m)=>a+(p.topics[m.id]||[]).length,0);
- const totalTopics=modules.reduce((a,m)=>a+m.topics.length,0);
- const totalSubs=ALL.reduce((a,e)=>a+e.subExperiments.length,0);
+ const st=performanceStats();
  const savedRes=resources().filter(r=>sv.includes(rkey(r)));
  const acts=act();
+ const firstName=String(S.name||"Student").trim().split(/\s+/)[0]||"Student";
+ const modPct=Math.round(modules.reduce((a,m)=>a+modulePct(m),0)/(modules.length||1));
+ const subPct=Math.round(st.labsDone/(st.labs||1)*100);
+ const resPct=Math.round(savedRes.length/(resources().length||1)*100);
+ const streakPct=Math.min(100,Math.round(st.streak/7*100));
  return `<div class="stu-hero">
   ${avatar()}
-  <div><div class="eyebrow">Student profile · 2026</div><h1>${esc(S.name)}</h1><div class="meta">${esc(S.rollNo)} · ${esc(S.degree)} ${esc(S.department)} · ${esc(S.year)} · Section ${esc(S.section)}</div><div class="tagrow" style="margin-top:10px"><span class="chip">${esc(S.subject)}</span><span class="chip plain">Faculty: ${esc(S.faculty)}</span><span class="chip yellow">${doneMods}/${modules.length} modules complete</span></div></div>
-  <div class="row"><button class="btn" onclick="editP()">${IC.edit} Edit profile</button><button class="btn ghost" onclick="changePic()">Quick photo</button><a class="btn primary" href="about.html">About me <span class="arr">→</span></a></div>
+  <div class="stu-intro"><div class="eyebrow">Student profile · 2026</div><h1>Welcome back, ${esc(firstName)}</h1><div class="meta">${esc(S.rollNo)} · ${esc(S.degree)} ${esc(S.department)} · ${esc(S.year)} · Section ${esc(S.section)}</div><p class="welcome-note">${st.pct}% of your tracked learning path is complete. Pick up where you left off, or ask the study assistant for a quick revision plan.</p><div class="tagrow" style="margin-top:10px"><span class="chip">${esc(S.subject)}</span><span class="chip plain">Faculty: ${esc(S.faculty)}</span><span class="chip yellow">${st.streak?st.streak+"-day study streak":"Start a streak today"}</span></div></div>
+  <div class="row stu-actions"><button class="btn" onclick="editP()">${IC.edit} Edit profile</button><a class="btn primary" href="assistant.html">${IC.spark} Study assistant <span class="arr">→</span></a></div>
  </div>
  <div class="kpis stagger">
-  <div class="kpi reveal"><b>${doneMods}/${modules.length}</b><span>Modules completed</span></div>
-  <div class="kpi reveal"><b>${topicsDone}/${totalTopics}</b><span>Topics studied</span></div>
-  <div class="kpi reveal"><b>${p.subs.length}/${totalSubs}</b><span>Sub-experiments done</span></div>
-  <div class="kpi reveal"><b>${savedRes.length}</b><span>Saved resources</span></div>
+  <div class="kpi reveal"><b><span data-count="${st.mods}">${st.mods}</span><small>/${st.modules}</small></b><span>Modules completed</span><div class="kpi-bar"><i style="--w:${modPct}%"></i></div></div>
+  <div class="kpi reveal"><b><span data-count="${st.labsDone}">${st.labsDone}</span><small>/${st.labs}</small></b><span>Lab parts complete</span><div class="kpi-bar"><i style="--w:${subPct}%"></i></div></div>
+  <div class="kpi reveal"><b><span data-count="${st.streak}">${st.streak}</span><small> day${st.streak===1?"":"s"}</small></b><span>Study streak</span><div class="kpi-bar"><i style="--w:${streakPct}%"></i></div></div>
+  <div class="kpi reveal"><b><span data-count="${savedRes.length}">${savedRes.length}</span><small> saved</small></b><span>Saved resources</span><div class="kpi-bar"><i style="--w:${resPct}%"></i></div></div>
  </div>
+ <section class="card perf-card reveal">
+  <div class="section-head"><div><div class="eyebrow">Performance</div><h2>Learning scorecard</h2><p class="muted">Calculated from the topics, lab parts and resources you have completed in this browser.</p></div><span class="chip ${st.pct>=100?"green":""}"><span data-count="${st.pct}">${st.pct}</span>% overall</span></div>
+  <div class="perf-grid">
+   ${perfItem("Overall",st.pct,st.topicsDone+" / "+st.topics+" topics")}
+   ${perfItem("Modules",modPct,st.mods+" of "+st.modules+" complete")}
+   ${perfItem("Labs",subPct,st.labsDone+" of "+st.labs+" parts")}
+   ${perfItem("Resources",resPct,savedRes.length+" bookmarked")}
+  </div>
+  <div class="dash-panels">
+   <div class="dash-panel"><div class="dash-panel-head"><div><div class="eyebrow">Momentum</div><h3>Weekly study activity</h3></div><span class="chip plain">Actual data</span></div>${dashActivityChart()}</div>
+   <div class="dash-panel"><div class="dash-panel-head"><div><div class="eyebrow">Coverage</div><h3>Learning by area</h3></div><span class="chip plain">${st.pct}% overall</span></div>${dashCategoryCards(st,savedRes)}</div>
+  </div>
+  ${dashDetails(st,savedRes)}
+  <div class="quick-actions"><span class="lbl">Quick actions</span><a class="btn sm" href="modules.html">${IC.modules} Continue modules</a><a class="btn sm" href="experiments.html">${IC.experiments} Open a lab</a><a class="btn sm" href="resources.html">${IC.resources} Find resources</a><a class="btn sm" href="assistant.html">${IC.spark} Ask the assistant</a></div>
+ </section>
  <div class="stu-grid">
   <div class="grid" style="gap:16px">
    <section class="card"><div class="section-head"><div><h2>Module progress</h2><p class="muted">Tick topics inside a module to build this picture.</p></div><a class="link-arrow" href="modules.html">All modules <span>→</span></a></div><div class="p-list">${modules.map(m=>{const pct=modulePct(m);return `<div class="p-row"><span class="pn">0${m.id}</span><div><div class="pt">${esc(m.title)}</div><div class="bar-track" style="margin-top:6px"><i class="bar-fill" style="--w:${pct}%"></i></div></div><span class="ps">${pct}%</span></div>`}).join("")}</div></section>
@@ -666,12 +978,198 @@ function studentPage(){
     <hr style="margin:14px 0">
     <div class="row" style="gap:14px"><div class="avatar" style="width:78px;height:78px;overflow:hidden" onclick="preview()" role="button" tabindex="0">${imgOr()}</div><div><b style="font-family:var(--ff-disp);font-size:15px">${esc(S.name)}</b><div class="lbl" style="font-size:9px">${esc(S.rollNo)}</div></div></div>
     <dl><dt>Department</dt><dd>${esc(S.department)}</dd><dt>Section</dt><dd>${esc(S.section)}</dd><dt>Subject</dt><dd>${esc(S.subject)}</dd><dt>Degree</dt><dd>${esc(S.degree)} · ${esc(S.year)}</dd><dt>Faculty</dt><dd>${esc(S.faculty)}<div class="lbl" style="font-size:9px">${esc(S.designation)}</div></dd></dl>
-    <div class="row"><button class="btn sm" onclick="editP()">Edit details</button><button class="btn sm" onclick="changePic()">Quick photo</button></div>
+    <div class="row"><button class="btn sm" onclick="editP()">Edit details</button></div>
    </div>
    <section class="card"><div class="section-head"><div><h2>Saved resources</h2><p class="muted">${savedRes.length} bookmarked</p></div><a class="link-arrow" href="resources.html">Library <span>→</span></a></div>${savedRes.length?`<div class="p-list">${savedRes.map(r=>`<div class="p-row"><span class="pn">${esc(typeMeta(r.type).k.slice(0,2).toUpperCase())}</span><div><a class="pt" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('No URL');return false"`}>${esc(r.title)}</a><div class="ps">${esc(r.category||"Resource")}</div></div><button class="btn sm" data-key="${esc(rkey(r))}" onclick="toggleSave(this.dataset.key)" aria-label="Remove bookmark">${IC.trash}</button></div>`).join("")}</div>`:`<p class="muted">No saved resources yet. <a href="resources.html" style="color:var(--acc);font-weight:700">Browse the library →</a></p>`}</section>
-   <section class="card"><div class="section-head"><div><h2>Recent projects</h2><p class="muted">From your project studio</p></div><a class="link-arrow" href="projects.html">All <span>→</span></a></div>${ps.length?`<div class="p-list">${ps.slice(0,3).map(p=>`<div class="p-row"><span class="pn">${esc(String(p.title||"P").slice(0,1).toUpperCase())}</span><div><div class="pt">${esc(p.title)}</div><div class="ps">${esc(p.category||"Project")} · ${esc(p.status||"Project")}</div></div><button class="btn sm" onclick="openProject('${esc(p.id)}')">View</button></div>`).join("")}</div>`:`<p class="muted">No projects yet. <a href="projects.html" style="color:var(--acc);font-weight:700">Open the studio →</a></p>`}</section>
+   <section class="card"><div class="section-head"><div><h2>Recommended for you</h2><p class="muted">Real resources you have not saved yet</p></div><a class="link-arrow" href="resources.html">All <span>→</span></a></div>${dashRecommendations(savedRes)}</section>
+   <section class="card"><div class="section-head"><div><h2>Recent projects</h2><p class="muted">From your project studio</p></div><a class="link-arrow" href="projects.html">All <span>→</span></a></div>${ps.length?`<div class="p-list">${ps.slice(0,3).map(p=>`<div class="p-row"><span class="pn">${esc(String(p.title||"P").slice(0,1).toUpperCase())}</span><div><div class="pt">${esc(p.title)}</div><div class="ps">${esc(p.category||"Project")} · ${esc(p.status||"Project")}</div></div><div class="row" style="gap:6px"><a class="btn sm yt" href="${esc(youtubeUrlForProject(p))}" target="_blank" rel="noopener" aria-label="Watch ${esc(p.title)} on YouTube">${IC.play} YouTube</a><button class="btn sm" onclick="openProject('${esc(p.id)}')">View</button></div></div>`).join("")}</div>`:`<p class="muted">No projects yet. <a href="projects.html" style="color:var(--acc);font-weight:700">Open the studio →</a></p>`}</section>
   </div>
  </div>`;
+}
+
+/* ---------------- study assistant ---------------- */
+const CHATKEY="mbu_chat";
+const PROMPT_HINTS=[
+ "Ask about Python, statistics, modules, labs, or resources…",
+ "Try “Explain the data science lifecycle”…",
+ "Try “Which lab practises Pandas?”…",
+ "Try “Build a one week revision plan”…",
+ "Search topics, tools and saved resources…"
+];
+const SpeechCtor=window.SpeechRecognition||window.webkitSpeechRecognition;
+let chatBusy=false;
+function chatHistory(){const h=J(CHATKEY,[]);return Array.isArray(h)?h:[]}
+function saveChat(h){try{localStorage.setItem(CHATKEY,JSON.stringify(h.slice(-30)))}catch{}}
+function chatWelcome(){return {role:"bot",text:"Hi! I am the local study guide for this portal. I can point you to modules, labs and resources, or suggest a short revision plan.\n\nAsk me something like “Explain the data science lifecycle” or “Which lab practises Pandas?”",links:[{label:"Browse modules",href:"modules.html"},{label:"Open the lab",href:"experiments.html"},{label:"Knowledge hub",href:"resources.html"}]}}
+function chatLink(l){const ext=/^https?:/i.test(l.href);return `<a class="chat-link" href="${esc(l.href)}"${ext?' target="_blank" rel="noopener"':""}>${esc(l.label)} <span>→</span></a>`}
+function chatMsg(m){
+ const links=(m.links||[]).map(chatLink).join("");
+ return `<div class="chat-msg ${m.role==="user"?"user":"bot"}${m.error?" error":""}"><span class="chat-avatar">${m.role==="user"?"You":"AI"}</span><div class="chat-bubble">${esc(m.text||"").replace(/\n/g,"<br>")}${links?`<div class="chat-links">${links}</div>`:""}</div></div>`;
+}
+function syncChatStatus(){
+ const el=$("#chatStatus");if(!el)return;
+ const has=chatHistory().length;
+ el.innerHTML=`<i></i>${has?"History saved":"Ready"}`;
+}
+function renderChat(){
+ const log=$("#chatLog");if(!log)return;
+ const h=chatHistory(),msgs=h.length?h:[chatWelcome()];
+ log.innerHTML=msgs.map(chatMsg).join("");
+ log.scrollTop=log.scrollHeight;
+ log.setAttribute("aria-busy","false");
+ syncChatStatus();
+}
+function voiceSupported(){return !!SpeechCtor}
+function micButton(inputId){
+ if(!voiceSupported())return "";
+ return `<button type="button" class="icon-btn mic-btn" onclick="startVoice('${esc(inputId)}',this)" aria-label="Use voice input" aria-pressed="false" title="Voice input (browser speech recognition)">${IC.mic}</button>`;
+}
+function startVoice(inputId,btn){
+ if(!SpeechCtor)return toast("Voice input is not supported in this browser","error");
+ if(btn&&btn.dataset.listening==="1"){try{btn._rec&&btn._rec.stop()}catch(e){}return}
+ const rec=new SpeechCtor();
+ rec.lang=document.documentElement.lang||navigator.language||"en-IN";
+ rec.interimResults=false;rec.maxAlternatives=1;
+ if(btn){btn._rec=rec;btn.dataset.listening="1";btn.classList.add("listening");btn.setAttribute("aria-pressed","true")}
+ const done=()=>{if(btn){btn.dataset.listening="";btn.classList.remove("listening");btn.setAttribute("aria-pressed","false")}};
+ rec.onresult=ev=>{
+  const text=[...ev.results].map(r=>r[0]?.transcript||"").join(" ").trim();
+  const input=document.getElementById(inputId);
+  if(input&&text){input.value=text;input.dispatchEvent(new Event("input",{bubbles:true}));input.focus();if(input.tagName==="TEXTAREA"){input.style.height="auto";input.style.height=Math.min(120,input.scrollHeight)+"px"}toast("Voice captured — press Send","success")}
+ };
+ rec.onend=done;
+ rec.onerror=e=>{done();toast(e.error==="not-allowed"?"Microphone permission was blocked":"Voice input could not start","error")};
+ try{rec.start();toast("Listening…","success")}catch(e){done();toast("Voice input could not start","error")}
+}
+function assistantAnswer(raw){
+ const t=String(raw||"").toLowerCase();
+ const words=t.split(/[^a-z0-9+#.]+/).filter(w=>w.length>2);
+ const hit=text=>words.some(w=>String(text).toLowerCase().includes(w));
+ const modHits=modules.filter(m=>hit([m.title,m.description,m.overview,m.topics.join(" "),m.objectives.join(" ")].join(" "))).slice(0,3);
+ const labHits=ALL.filter(e=>hit([e.name,e.description,e.overview,e.subExperiments.map(s=>s.name+" "+s.topic).join(" ")].join(" "))).slice(0,3);
+ const resHits=resources().filter(r=>hit([r.title,r.description,r.category,r.subject||""].join(" "))).slice(0,3);
+ if(/^(hi|hello|hey|good (morning|afternoon|evening))/.test(t.trim()))return {text:"Hello! What would you like to study today? I can help you find a module, open a lab, or build a short revision plan.",links:[{label:"Modules",href:"modules.html"},{label:"Experiments",href:"experiments.html"},{label:"Resources",href:"resources.html"}]};
+ if(/youtube|video|tutorial/.test(t)){
+  const links=ALL.slice(0,3).map(e=>({label:"Experiment "+e.id+" tutorial",href:e.youtube||("https://www.youtube.com/results?search_query="+encodeURIComponent(e.name+" data science tutorial"))}));
+  return {text:"Video tutorials are linked from each experiment and project. Here are a few starting points:",links};
+ }
+ if(/project/.test(t))return {text:"The project studio has academic builds, technology stacks and a YouTube action on every card. Add your own project there, or open a project to see its details.",links:[{label:"Open project studio",href:"projects.html"},{label:"Add a project",href:"projects.html"}]};
+ let text="",links=[];
+ if(modHits.length){text+="Modules that match:\n"+modHits.map(m=>"• Module 0"+m.id+" — "+m.title).join("\n")+"\n";modHits.forEach(m=>links.push({label:"Module 0"+m.id+" · "+m.title,href:"module.html?id="+m.id}))}
+ if(labHits.length){text+="\nLabs that match:\n"+labHits.map(e=>"• Experiment "+e.id+" — "+e.name).join("\n")+"\n";labHits.forEach(e=>links.push({label:"Lab "+e.id+" · "+e.name,href:"experiment.html?id="+e.id}))}
+ if(resHits.length){text+="\nResources that match:\n"+resHits.map(r=>"• "+r.title).join("\n")+"\n";resHits.forEach(r=>links.push({label:r.title,href:r.url||"resources.html"}))}
+ if(text)return {text:text.trim()+"\n\nOpen a link below, or ask a narrower question for a more specific answer.",links:links.slice(0,6)};
+ return {text:"I could not find an exact match in the portal data. Try one of these topics, or browse the linked section:\n• Data science lifecycle\n• Missing values and outliers\n• Statistics and distributions\n• Pandas and data preparation\n• Model evaluation",links:[{label:"All modules",href:"modules.html"},{label:"All labs",href:"experiments.html"},{label:"All resources",href:"resources.html"}]};
+}
+function assistantPage(){
+ const has=chatHistory().length;
+ return `<div class="page-head"><div class="eyebrow">Study support · local guide</div><h1 class="page-title">Study Assistant</h1><p class="lede">Ask for explanations, revision steps and links into your modules, labs and resources. This is a deterministic local guide — not a live AI service.</p><div class="head-actions"><button class="btn remove-btn" onclick="clearChat()">${IC.trash} Clear chat</button></div></div>
+ <div class="chat-layout">
+  <section class="card chat-panel">
+   <div class="chat-head"><div class="row" style="gap:10px"><span class="chat-orb">${IC.spark}</span><div><b>Study guide</b><div class="lbl">Local demo · grounded in portal data</div></div></div><span class="status live" id="chatStatus"><i></i>${has?"History saved":"Ready"}</span></div>
+   <div class="chat-log" id="chatLog" aria-live="polite" aria-busy="false" aria-label="Conversation"></div>
+   <form class="chat-form" onsubmit="assistantSend(event)"><label class="sr-only" for="chatInput">Message</label><textarea id="chatInput" rows="1" data-rotate-placeholder placeholder="${esc(PROMPT_HINTS[0])}" aria-label="Message the study assistant" oninput="this.style.height='auto';this.style.height=Math.min(120,this.scrollHeight)+'px'" onkeydown="assistantKey(event)"></textarea>${micButton("chatInput")}<button class="btn primary" id="chatSend" type="submit">Send ${IC.arrow}</button></form>
+  </section>
+  <aside class="chat-side">
+   <section class="card"><div class="eyebrow">How it works</div><h3>Grounded in your portal</h3><p class="muted">Answers are matched against the modules, experiments and resources stored in this project. No message leaves your browser.</p></section>
+   <section class="card"><div class="eyebrow">Try asking</div><div class="chat-suggestions"><button class="fchip" onclick="assistantAsk('Explain the data science lifecycle')">Data science lifecycle</button><button class="fchip" onclick="assistantAsk('How do I handle missing values and outliers?')">Missing values</button><button class="fchip" onclick="assistantAsk('Which lab practises Pandas?')">Pandas lab</button><button class="fchip" onclick="assistantAsk('Build a one week revision plan')">Revision plan</button></div></section>
+   <section class="card demo-note"><div class="eyebrow">Integration point</div><h3>Connect a real AI API</h3><p class="muted">This static build has no AI backend. To enable live answers, add a server endpoint that keeps your API key server-side, then replace the local <code>assistantAnswer()</code> call in <code>js/app.js</code> with a request to that endpoint. Attachments and streaming stay disabled until that backend exists.</p></section>
+  </aside>
+ </div>`;
+}
+function assistantKey(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();assistantSend()}}
+function assistantAsk(text){if(chatBusy){toast("Please wait for the current reply");return}const i=$("#chatInput");if(!i)return;i.value=text;assistantSend()}
+function assistantSend(e){
+ if(e&&e.preventDefault)e.preventDefault();
+ const input=$("#chatInput");if(!input)return;
+ const text=input.value.trim();if(!text)return;
+ if(chatBusy){toast("Please wait for the current reply");return}
+ input.value="";input.style.height="auto";
+ sendAssistant(text,"page");
+}
+function showTyping(mode){
+ const log=document.getElementById(mode==="dock"?"dockLog":"chatLog");if(!log)return;
+ const ty=document.createElement("div");
+ ty.className="chat-msg bot typing";
+ ty.innerHTML='<span class="chat-avatar">AI</span><div class="chat-bubble typing-bubble"><i></i><i></i><i></i><span class="sr-only">Preparing a local answer</span></div>';
+ log.append(ty);log.scrollTop=log.scrollHeight;log.setAttribute("aria-busy","true");
+}
+function sendAssistant(text,mode){
+ chatBusy=true;
+ const h=chatHistory();h.push({role:"user",text,at:Date.now()});saveChat(h);
+ if(mode==="dock"){const i=$("#dockInput");if(i){i.value="";i.style.height="auto"}renderDock()}
+ else renderChat();
+ showTyping(mode);
+ const btn=document.getElementById(mode==="dock"?"dockSend":"chatSend");
+ btnBusy(btn,"Thinking…");
+ const delay=520+Math.min(800,text.length*10);
+ setTimeout(()=>{
+  let failed=false;
+  try{
+   const h2=chatHistory();const a=assistantAnswer(text);
+   h2.push({role:"bot",text:a.text,links:a.links||[],at:Date.now()});saveChat(h2);
+  }catch(err){
+   failed=true;
+   const h2=chatHistory();h2.push({role:"bot",text:"The local study guide could not build an answer. Please try a different question.",error:true,at:Date.now()});saveChat(h2);
+  }finally{
+   chatBusy=false;btnIdle(btn);
+   if(mode==="dock")renderDock();else renderChat();
+   syncChatStatus();
+   if(failed)toast("The local guide could not answer that request","error");
+  }
+ },delay);
+}
+function clearChat(){localStorage.removeItem(CHATKEY);renderChat();renderDock();toast("Chat cleared","success")}
+function renderDock(){
+ const log=$("#dockLog");if(!log)return;
+ const h=chatHistory(),msgs=h.length?h.slice(-10):[chatWelcome()];
+ log.innerHTML=msgs.map(chatMsg).join("");
+ log.scrollTop=log.scrollHeight;
+ log.setAttribute("aria-busy","false");
+}
+function dockKey(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();dockSend()}}
+function dockSend(e){
+ if(e&&e.preventDefault)e.preventDefault();
+ const input=$("#dockInput");if(!input)return;
+ const text=input.value.trim();if(!text)return;
+ if(chatBusy){toast("Please wait for the current reply");return}
+ input.value="";input.style.height="auto";
+ sendAssistant(text,"dock");
+}
+function assistantDock(){
+ return `<div class="assistant-dock" id="assistantDock" aria-hidden="true" aria-label="Study Assistant panel">
+  <div class="dock-head"><div class="row" style="gap:10px"><span class="chat-orb">${IC.spark}</span><div><b>Study Assistant</b><div class="lbl">Local guide · grounded in your portal</div></div></div><button class="icon-btn" type="button" onclick="dockClose()" aria-label="Close assistant">✕</button></div>
+  <div class="dock-log" id="dockLog" aria-live="polite" aria-busy="false"></div>
+  <form class="chat-form dock-form" onsubmit="window.dockSend(event)"><label class="sr-only" for="dockInput">Message</label><textarea id="dockInput" rows="1" data-rotate-placeholder placeholder="${esc(PROMPT_HINTS[0])}" aria-label="Message the study assistant" oninput="this.style.height='auto';this.style.height=Math.min(90,this.scrollHeight)+'px'" onkeydown="dockKey(event)"></textarea>${micButton("dockInput")}<button class="btn primary" id="dockSend" type="submit" aria-label="Send message">${IC.arrow}<span class="dock-send-label">Send</span></button></form>
+  <div class="dock-foot"><span>No message leaves your browser.</span><a href="assistant.html">Open full assistant →</a></div>
+ </div>
+ <button class="assistant-fab" id="assistantFab" type="button" onclick="dockToggle()" aria-controls="assistantDock" aria-expanded="false">${IC.spark}<span>Study Assistant</span></button>`;
+}
+function dockToggle(){
+ const d=$("#assistantDock"),f=$("#assistantFab");if(!d)return;
+ const open=!d.classList.contains("open");
+ d.classList.toggle("open",open);
+ d.setAttribute("aria-hidden",open?"false":"true");
+ if(f){f.setAttribute("aria-expanded",open?"true":"false");f.classList.toggle("is-open",open)}
+ document.body.classList.toggle("assistant-open",open);
+ if(open){renderDock();setTimeout(()=>{const i=$("#dockInput");if(i)i.focus()},220)}
+}
+function dockClose(){
+ const d=$("#assistantDock"),f=$("#assistantFab");if(!d)return;
+ d.classList.remove("open");d.setAttribute("aria-hidden","true");
+ if(f){f.setAttribute("aria-expanded","false");f.classList.remove("is-open")}
+ document.body.classList.remove("assistant-open");
+}
+function startPromptHints(){
+ if(!window.matchMedia||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ const inputs=[...document.querySelectorAll("textarea[data-rotate-placeholder]")];
+ if(!inputs.length)return;
+ if(window._mbuPromptTimer)clearInterval(window._mbuPromptTimer);
+ let idx=0;
+ window._mbuPromptTimer=setInterval(()=>{
+  idx=(idx+1)%PROMPT_HINTS.length;
+  inputs.forEach(i=>{if(!i.value&&document.activeElement!==i)i.placeholder=PROMPT_HINTS[idx]});
+ },4200);
 }
 
 /* ---------------- about ---------------- */
@@ -698,7 +1196,7 @@ function aboutPage(){
 function footer(){
  return `<footer class="site-foot">
   <div><div class="brandline">Data Science Digital Library</div><p>A student-built learning portal for modules, experiments, tools, resources and projects at Mohan Babu University.</p></div>
-  <nav aria-label="Footer"><a href="index.html">Home</a><a href="modules.html">Modules</a><a href="experiments.html">Experiments</a><a href="tools.html">Tools</a><a href="resources.html">Resources</a><a href="projects.html">Projects</a><a href="student.html">Student</a><a href="about.html">About</a></nav>
+  <nav aria-label="Footer"><a href="index.html">Home</a><a href="modules.html">Modules</a><a href="experiments.html">Experiments</a><a href="tools.html">Tools</a><a href="resources.html">Resources</a><a href="assistant.html">Assistant</a><a href="projects.html">Projects</a><a href="student.html">Student</a><a href="about.html">About</a></nav>
   <div class="fine"><span>© 2026 Mohan Babu University · Data Science</span><span>Academic year 2026 · Saved locally in this browser</span></div>
  </footer>`;
 }
@@ -805,16 +1303,19 @@ function resetCompiler(){changeCompilerLanguage();$("#compilerInput").value=""}
 async function runCompiler(){const lang=$("#compilerLanguage").value,source=$("#compilerCode").value,input=$("#compilerInput").value,out=$("#compilerOutput");out.textContent="Submitting code to execution service…";const map={Python:["python","3.10.0"],Java:["java","15.0.2"],C:["c","10.2.0"],"C++":["c++","10.2.0"]};try{const response=await fetch("https://emkc.org/api/v2/piston/execute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:map[lang][0],version:map[lang][1],files:[{name:lang==="Java"?"Main.java":lang==="C"?"main.c":lang==="C++"?"main.cpp":"main.py",content:source}],stdin:input})});if(!response.ok)throw new Error("Execution service returned HTTP "+response.status);const result=await response.json();const run=result.run||{},compile=result.compile||{};out.textContent=[compile.stderr?("Compile errors:\n"+compile.stderr):"",run.stdout?("Output:\n"+run.stdout):"",run.stderr?("Runtime errors:\n"+run.stderr):"",!compile.stderr&&!run.stdout&&!run.stderr?"Program finished with no output.":"",run.code!==undefined?"Exit code: "+run.code:""].filter(Boolean).join("\n\n")}catch(e){out.textContent="Could not run code: "+e.message+"\n\nCheck your internet connection or service availability. This static project requires the external execution service; for production, route requests through a secured backend/sandbox."}}
 
 /* ---------------- page table + render ---------------- */
-const R={home,modules:modulesPage,module:modulePage,experiments:experimentsPage,experiment:experimentPage,sub:subPage,tools:toolsPage,resources:resourcesPage,projects:projectsPage,student:studentPage,about:aboutPage};
+const R={home,modules:modulesPage,module:modulePage,experiments:experimentsPage,experiment:experimentPage,sub:subPage,tools:toolsPage,resources:resourcesPage,projects:projectsPage,student:studentPage,assistant:assistantPage,about:aboutPage};
 
 function boot(){
  const view=(R[page]||home)();
- $("#app").innerHTML=head()+`<main id="main" class="page">`+view+`</main>`+footer();
+ const dock=page==="assistant"?"":assistantDock();
+ $("#app").innerHTML=head()+`<main id="main" class="page">`+view+`</main>`+footer()+dock;
  if(page==="experiments"){cards(ALL);filt()}
  if(page==="resources")renderResources("boot");
  if(page==="projects")renderProjects();
  if(page==="modules")renderModules();
  if(page==="tools")renderTools();
+ if(page==="assistant")renderChat();else renderDock();
+ startPromptHints();
 }
 function rerender(){
  boot();

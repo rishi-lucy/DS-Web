@@ -90,37 +90,40 @@ async function runPython(code,say){
 }
 
 /* ---------- the 4-language panel ---------- */
+const DRAFT_KEY="mbu_lab_drafts";
+function draftStore(){try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY));return d&&typeof d==="object"?d:{}}catch{return{}}}
+function saveDraft(k,v){try{const d=draftStore();if(v==null)delete d[k];else d[k]=v;localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch{}}
 function panel(o){
   const subs=o.subs,st={i:o.start||0,lang:"Python",buf:{}},root=document.createElement("div");
   root.className="lab card";
-  root.innerHTML=`<div class="lab-head"><div><div class="eyebrow">LIVE CODE LAB · COMPILE &amp; RUN</div><h3>${E(o.title)}</h3><p class="muted">Pick a language, edit the code, press Run (Ctrl+Enter).</p></div><span class="lab-badge">Python · Java · C · C++</span></div>
+  root.innerHTML=`<div class="lab-head"><div><div class="eyebrow">LIVE CODE LAB · COMPILE &amp; RUN</div><h3>${E(o.title)}</h3><p class="muted">Pick a language, edit the code, press Run (Ctrl+Enter). Drafts auto-save in this browser.</p></div><span class="lab-badge">Python · Java · C · C++</span></div>
   <div class="lab-subs"></div><div class="lab-tabs">${LANGS.map(l=>`<button class="lab-tab" data-l="${E(l)}">${E(l)}</button>`).join("")}</div>
   <textarea class="lab-code" rows="12" spellcheck="false" aria-label="Source code"></textarea>
   <label class="lab-in">Standard input (optional, Java/C/C++)<textarea class="lab-stdin" rows="2" spellcheck="false"></textarea></label>
   <div class="row lab-act"><button class="btn primary run">▶ Run</button><button class="btn rst">Reset code</button><button class="btn cp">Copy</button><span class="lab-st muted"></span></div>
   <pre class="lab-out">Ready.</pre><div class="lab-img"></div>`;
   const q=s=>root.querySelector(s),code=q(".lab-code"),out=q(".lab-out"),img=q(".lab-img"),stat=q(".lab-st"),runB=q(".run");
-  const cur=()=>subs[st.i],key=()=>cur().id+"|"+st.lang,orig=()=>cur().codes[st.lang]||"";
+  const cur=()=>subs[st.i],key=()=>cur().id+"|"+st.lang,dkey=()=>"lab:"+key(),orig=()=>cur().codes[st.lang]||"";
   function draw(){
     const sb=q(".lab-subs");
     sb.style.display=subs.length>1?"flex":"none";
     sb.innerHTML=subs.map((s,i)=>`<button class="lab-sub ${i===st.i?"on":""}" data-i="${i}" title="${E(s.name)}">${E(s.id)} · ${E(s.name)}</button>`).join("");
     root.querySelectorAll(".lab-tab").forEach(b=>b.classList.toggle("on",b.dataset.l===st.lang));
-    code.value=st.buf[key()]??orig();out.textContent="Ready.";img.innerHTML="";stat.textContent="";
+    code.value=st.buf[key()]??draftStore()[dkey()]??orig();out.textContent="Ready.";img.innerHTML="";stat.textContent="";
   }
   q(".lab-subs").onclick=e=>{const b=e.target.closest(".lab-sub");if(b){st.i=+b.dataset.i;draw()}};
   root.querySelector(".lab-tabs").onclick=e=>{const b=e.target.closest(".lab-tab");if(b){st.lang=b.dataset.l;draw()}};
-  code.oninput=()=>{st.buf[key()]=code.value};
+  code.oninput=()=>{st.buf[key()]=code.value;saveDraft(dkey(),code.value)};
   code.onkeydown=e=>{
     if(e.key==="Tab"){e.preventDefault();const s=code.selectionStart;code.setRangeText("  ",s,code.selectionEnd,"end");code.oninput()}
     if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();runB.click()}
   };
-  q(".rst").onclick=()=>{delete st.buf[key()];draw()};
+  q(".rst").onclick=()=>{delete st.buf[key()];saveDraft(dkey(),null);draw()};
   q(".cp").onclick=async()=>{try{await navigator.clipboard.writeText(code.value);window.toast&&toast("Code copied")}catch{window.toast&&toast("Clipboard unavailable")}};
   runB.onclick=async()=>{
     const lang=st.lang,src=code.value;
     if(!src.trim()){out.textContent="Please enter some code first.";return}
-    runB.disabled=true;runB.textContent="Running…";img.innerHTML="";out.textContent="";
+    btnBusy(runB,"Running…");img.innerHTML="";out.textContent="";
     const say=m=>{stat.textContent=m};
     try{
       if(lang==="Python"){const r=await runPython(src,say);out.textContent=r.text;img.innerHTML=r.imgs.map(b=>`<img alt="Chart output" src="data:image/png;base64,${b}">`).join("")}
@@ -128,7 +131,7 @@ function panel(o){
     }catch(e){
       out.textContent="Could not run the program.\n"+(e.message||e)+"\n\nCheck your internet connection, or set your own compiler server in js/config.js.";
     }
-    stat.textContent="";runB.disabled=false;runB.textContent="▶ Run";
+    stat.textContent="";btnIdle(runB);
   };
   draw();return root;
 }
@@ -160,7 +163,9 @@ function loadPdfJs(){
 let bookReady=false,bookApi=null;
 async function mountBook(){
   const host=document.getElementById("pdfFlip");if(!host||bookReady)return;bookReady=true;
-  const id=new URLSearchParams(location.search).get("id")||"1",url="assets/modules/module-"+id+".pdf";
+  const id=new URLSearchParams(location.search).get("id")||"1";
+  const mm=(typeof modules!=="undefined"?modules:[]).find(x=>String(x.id)===String(id));
+  const url=(mm&&mm.material)||"assets/modules/module-"+id+".pdf";
   host.innerHTML=`<div class="pbk-stage"><div class="pbook" data-pos="start"><div class="pbk-load">Loading 3D flipbook…</div></div></div>
   <div class="row pbk-ctrl"><button class="btn" data-a="first">⇤ First</button><button class="btn" data-a="prev">← Prev</button><span class="lbl" id="bkN">Cover</span><button class="btn" data-a="next">Next →</button><button class="btn" data-a="last">Last ⇥</button></div>
   <p class="muted" style="text-align:center">Click a page or use the Next/Prev buttons or ← → keys to turn pages in 3D.</p>`;
