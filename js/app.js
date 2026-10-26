@@ -22,7 +22,7 @@ function flushSearch(kind){
 (()=>{try{const o=J("mbu_student",{});if(o.name==="Manchala Bhargavi"){o.name=student.name;localStorage.setItem("mbu_student",JSON.stringify(o))}}catch(e){}})(); /* replaces a previously saved old name */
 const _saved=J("mbu_student",{});
 if(["Manchala Bhargavi","Pujala Geetha Nandini"].includes(_saved.name)||["24102A030088","24102A030099"].includes(_saved.rollNo)){localStorage.removeItem("mbu_student");for(const k in _saved)delete _saved[k]}  /* drop cached profiles from earlier defaults */
-const S=Object.assign({},student,_saved);S.social=Object.assign({},student.social,S.social);
+const S=Object.assign({},student,_saved);S.social=Object.assign({},student.social,S.social);S.social.github=S.social.github||student.social.github;S.social.linkedin=S.social.linkedin||student.social.linkedin;
 const ALL=experiments.concat(J("mbu_exps",[]));
 /* custom modules are local to this browser — defaults stay untouched */
 const MOD_STORE="mbu_modules";
@@ -73,6 +73,8 @@ const IC={
  edit:svg('<path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>'),
  mic:svg('<path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M8 21h8"/>')
 };
+const GH_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 1.7 2.63 1.21 3.27.93.1-.72.39-1.21.71-1.49-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.08 1.14a10.7 10.7 0 0 1 5.6 0c2.14-1.44 3.08-1.14 3.08-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.25-5.1 5.53.4.35.75 1.03.75 2.08v3.05c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .9Z"/></svg>';
+const LI_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4ZM3.3 9.3h3.8v11.4H3.3zM9.2 9.3h3.6v1.6h.1a4 4 0 0 1 3.6-2c3.9 0 4.6 2.5 4.6 5.7v6.1h-3.8v-5.4c0-1.3 0-3-1.9-3s-2.2 1.4-2.2 2.9v5.5H9.2z"/></svg>';
 
 /* ---------------- ui helpers ---------------- */
 function toast(t,type){
@@ -260,13 +262,13 @@ function toggleSub(id,expId,btn){
 
 /* ---------------- profile ---------------- */
 const avatarInitials=esc(S.name.split(" ").map(w=>w[0]).join("").slice(0,3)||"ST");
-const profileImage=student.profileImage||"assets/images/profile.jpg?v=20261026r";
+const profileImage=student.profileImage||"assets/images/profile.jpg?v=20261026w";
 const avatarFace=()=>`<span class="avatar-initials" aria-hidden="true">${avatarInitials}</span><img src="${esc(profileImage)}" alt="Profile photo of ${esc(S.name)}" width="338" height="356" decoding="async" onerror="this.remove()">`;
 const avatar=()=>`<button class="avatar" aria-label="View profile details" onclick="preview()">${avatarFace()}</button>`;
 function preview(){modal("pv",`<div class="modal-head"><div><div class="eyebrow">Student</div><h2>${esc(S.name)}</h2></div><button class="icon-btn" aria-label="Close" onclick="this.closest('.modal').classList.remove('open')">✕</button></div><div style="text-align:center"><div class="avatar" style="width:min(280px,70vw);height:min(280px,70vw);margin:auto;font-size:60px;cursor:default;overflow:hidden" aria-hidden="true">${avatarFace()}</div><p class="muted" style="margin-top:12px">${esc(S.degree)} · ${esc(S.department)} · ${esc(S.year)}</p></div>`)}
 function profile(){const f=S.social,ic=[
- ["linkedin","LinkedIn",`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4ZM3.3 9.3h3.8v11.4H3.3zM9.2 9.3h3.6v1.6h.1a4 4 0 0 1 3.6-2c3.9 0 4.6 2.5 4.6 5.7v6.1h-3.8v-5.4c0-1.3 0-3-1.9-3s-2.2 1.4-2.2 2.9v5.5H9.2z"/></svg>`],
- ["github","GitHub",`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 1.7 2.63 1.21 3.27.93.1-.72.39-1.21.71-1.49-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.08 1.14a10.7 10.7 0 0 1 5.6 0c2.14-1.44 3.08-1.14 3.08-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.25-5.1 5.53.4.35.75 1.03.75 2.08v3.05c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .9Z"/></svg>`],
+ ["linkedin","LinkedIn",LI_ICON],
+ ["github","GitHub",GH_ICON],
  ["instagram","Instagram",`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.7" r="1.2" fill="currentColor"/></svg>`]
 ];
 return `<aside class="card">
@@ -298,7 +300,7 @@ function head(){
  const dark=document.documentElement.dataset.theme==="dark";
  return `<a class="skip-link" href="#main">Skip to content</a>
  <div class="bar">
-  <a class="logo" href="index.html" aria-label="Data Science Portal — home"><span class="logo-txt"><b>Digital Library</b><small>Data Science · MBU</small></span></a>
+  <a class="logo" href="index.html" aria-label="Data Science Portal — home"><span class="logo-txt"><b>Digital Library</b><small>Data Science</small></span></a>
   <header><nav class="top nav" id="tn" aria-label="Main">
    ${items.map(x=>`<a href="${x[0]}" ${on(x)?'class="on" aria-current="page"':""}>${x[3]}<span>${x[1]}</span></a>`).join("")}
    <button class="theme-toggle" onclick="theme()" aria-label="${dark?"Switch to light mode":"Switch to dark mode"}" aria-pressed="${dark?"true":"false"}" title="Light / dark mode"><span class="tt-track"><span class="tt-sun">☀</span><span class="tt-moon">☾</span><span class="tt-knob"></span></span></button>
@@ -933,7 +935,7 @@ function studentPage(){
  return `<div class="stu-hero">
   ${avatar()}
   <div class="stu-intro"><div class="eyebrow">Student profile · 2026</div><h1>Welcome back, ${esc(firstName)}</h1><div class="meta">${esc(S.rollNo)} · ${esc(S.degree)} ${esc(S.department)} · ${esc(S.year)} · Section ${esc(S.section)}</div><p class="welcome-note">${st.pct}% of your tracked learning path is complete. Pick up where you left off, or ask the study assistant for a quick revision plan.</p><div class="tagrow" style="margin-top:10px"><span class="chip">${esc(S.subject)}</span><span class="chip plain">Faculty: ${esc(S.faculty)}</span><span class="chip yellow">${st.streak?st.streak+"-day study streak":"Start a streak today"}</span></div></div>
-  <div class="row stu-actions"><button class="btn" onclick="editP()">${IC.edit} Edit profile</button><a class="btn primary" href="assistant.html">${IC.spark} Study assistant <span class="arr">→</span></a></div>
+  <div class="row stu-actions"><a class="btn primary" href="assistant.html">${IC.spark} Study assistant <span class="arr">→</span></a></div>
  </div>
  <div class="kpis stagger">
   <div class="kpi reveal"><b><span data-count="${st.mods}">${st.mods}</span><small>/${st.modules}</small></b><span>Modules completed</span><div class="kpi-bar"><i style="--w:${modPct}%"></i></div></div>
@@ -968,7 +970,7 @@ function studentPage(){
     <hr style="margin:14px 0">
     <div class="row" style="gap:14px"><div class="avatar" style="width:78px;height:78px;overflow:hidden" onclick="preview()" role="button" tabindex="0">${avatarFace()}</div><div><b style="font-family:var(--ff-disp);font-size:15px">${esc(S.name)}</b><div class="lbl" style="font-size:9px">${esc(S.rollNo)}</div></div></div>
     <dl><dt>Department</dt><dd>${esc(S.department)}</dd><dt>Section</dt><dd>${esc(S.section)}</dd><dt>Subject</dt><dd>${esc(S.subject)}</dd><dt>Degree</dt><dd>${esc(S.degree)} · ${esc(S.year)}</dd><dt>Faculty</dt><dd>${esc(S.faculty)}<div class="lbl" style="font-size:9px">${esc(S.designation)}</div></dd></dl>
-    <div class="row"><button class="btn sm" onclick="editP()">Edit details</button></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">${S.social.github?`<a class="btn sm" href="${esc(S.social.github)}" target="_blank" rel="noopener" aria-label="Open ${esc(S.name)}'s GitHub profile" title="${esc(S.social.github)}">${GH_ICON} GitHub</a>`:""}${S.social.linkedin?`<a class="btn sm" href="${esc(S.social.linkedin)}" target="_blank" rel="noopener" aria-label="Open ${esc(S.name)}'s LinkedIn profile" title="${esc(S.social.linkedin)}">${LI_ICON} LinkedIn</a>`:""}</div>
    </div>
    <section class="card"><div class="section-head"><div><h2>Saved resources</h2><p class="muted">${savedRes.length} bookmarked</p></div><a class="link-arrow" href="resources.html">Library <span>→</span></a></div>${savedRes.length?`<div class="p-list">${savedRes.map(r=>`<div class="p-row"><span class="pn">${esc(typeMeta(r.type).k.slice(0,2).toUpperCase())}</span><div><a class="pt" href="${esc(r.url||"#")}" ${r.url?'target="_blank" rel="noopener"':`onclick="toast('No URL');return false"`}>${esc(r.title)}</a><div class="ps">${esc(r.category||"Resource")}</div></div><button class="btn sm" data-key="${esc(rkey(r))}" onclick="toggleSave(this.dataset.key)" aria-label="Remove bookmark">${IC.trash}</button></div>`).join("")}</div>`:`<p class="muted">No saved resources yet. <a href="resources.html" style="color:var(--acc);font-weight:700">Browse the library →</a></p>`}</section>
    <section class="card"><div class="section-head"><div><h2>Recommended for you</h2><p class="muted">Real resources you have not saved yet</p></div><a class="link-arrow" href="resources.html">All <span>→</span></a></div>${dashRecommendations(savedRes)}</section>

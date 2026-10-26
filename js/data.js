@@ -20,11 +20,11 @@ const student = {
   university: "Mohan Babu University",
   degree: "B.Tech",
   year: "3rd Year",
-  profileImage: "assets/images/profile.jpg?v=20261026r",
+  profileImage: "assets/images/profile.jpg?v=20261026w",
   social: {
     website: "",
-    linkedin: "",
-    github: "",
+    linkedin: "https://www.linkedin.com/in/rishikesh-vungarala-203902l/",
+    github: "https://github.com/rishi-lucy",
     instagram: ""
   }
 };
